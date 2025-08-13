@@ -1,4 +1,4 @@
-import { Product, ProductCategory, ProductsApiResponse, SortConfig, User } from '../types';
+import { Product, ProductCategory, ProductsApiResponse, SortConfig, User, Offer } from '../types';
 
 // --- IN-MEMORY DATABASE ---
 let products: Product[] = [
@@ -18,6 +18,12 @@ let products: Product[] = [
   { id: 14, name: 'Canvas Tote Bag', category: 'General', price: 15.00, stock: 300, sold: 180 },
   { id: 15, name: 'Blender', category: 'Kitchenware', price: 89.99, stock: 90, sold: 35 },
   { id: 16, name: 'Mascara', category: 'Cosmetics', price: 14.00, stock: 150, sold: 88 },
+];
+
+let offers: Offer[] = [
+  { id: 1, title: 'Summer Kick-off Sale', description: 'Get 25% off on all apparel. Perfect for the sunny days ahead!', promoCode: 'SUNNY25' },
+  { id: 2, title: 'Electronics Bonanza', description: 'Save $50 on any electronics purchase over $500. Upgrade your tech today.', promoCode: 'TECH50' },
+  { id: 3, title: 'New User Welcome', description: 'First time here? Enjoy 15% off your entire first order as a welcome gift!', promoCode: 'WELCOME15' },
 ];
 
 
@@ -167,6 +173,64 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean }> =
     products = products.filter(p => p.id !== id);
     if(products.length === initialLength) {
         throw new Error("Product not found");
+    }
+    return { success: true };
+};
+
+// --- API REFERENCE: OFFERS ---
+
+/**
+ * Endpoint: GET /api/offers
+ * Fetches all offers.
+ * @returns {Promise<Offer[]>}
+ */
+export const getOffers = async (): Promise<Offer[]> => {
+    await delay(600);
+    return [...offers].sort((a, b) => b.id - a.id); // Return newest first
+};
+
+/**
+ * Endpoint: POST /api/offers
+ * Adds a new offer.
+ * @param {Omit<Offer, 'id'>} offerData
+ * @returns {Promise<Offer>}
+ */
+export const addOffer = async (offerData: Omit<Offer, 'id'>): Promise<Offer> => {
+    await delay(500);
+    const newOffer: Offer = { id: Date.now(), ...offerData };
+    offers = [newOffer, ...offers];
+    return newOffer;
+};
+
+/**
+ * Endpoint: PUT /api/offers/:id
+ * Updates an existing offer.
+ * @param {number} id
+ * @param {Partial<Omit<Offer, 'id'>>} updatedData
+ * @returns {Promise<Offer>}
+ */
+export const updateOffer = async (id: number, updatedData: Partial<Omit<Offer, 'id'>>): Promise<Offer> => {
+    await delay(500);
+    let offerToUpdate = offers.find(o => o.id === id);
+    if (!offerToUpdate) {
+        throw new Error("Offer not found");
+    }
+    Object.assign(offerToUpdate, updatedData);
+    return offerToUpdate;
+};
+
+/**
+ * Endpoint: DELETE /api/offers/:id
+ * Deletes an offer.
+ * @param {number} id
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const deleteOffer = async (id: number): Promise<{ success: boolean }> => {
+    await delay(500);
+    const initialLength = offers.length;
+    offers = offers.filter(o => o.id !== id);
+    if (offers.length === initialLength) {
+        throw new Error("Offer not found");
     }
     return { success: true };
 };

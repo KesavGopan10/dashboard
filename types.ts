@@ -19,13 +19,20 @@ export type SortConfig = {
   direction: 'ascending' | 'descending';
 }
 
-export type Page = 'dashboard' | 'products' | 'reports' | 'settings';
+export type Page = 'dashboard' | 'products' | 'offers' | 'reports' | 'settings';
 
 export interface User {
   id: number;
   name: string;
   email: string;
   role: 'Admin' | 'Editor';
+}
+
+export interface Offer {
+  id: number;
+  title: string;
+  description: string;
+  promoCode: string;
 }
 
 export interface AppContextType {
