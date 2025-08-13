@@ -5,7 +5,7 @@ import { SortIcon } from './icons';
 interface SortableTableHeaderProps<T> {
   label: string;
   sortKey: keyof T;
-  sortConfig: SortConfig;
+  sortConfig: SortConfig<T>;
   onSort: (key: keyof T) => void;
 }
 

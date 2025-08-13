@@ -14,12 +14,12 @@ export interface ProductsApiResponse {
   totalCount: number;
 }
 
-export type SortConfig = {
-  key: keyof Product | null;
+export type SortConfig<T> = {
+  key: keyof T | null;
   direction: 'ascending' | 'descending';
 }
 
-export type Page = 'dashboard' | 'products' | 'offers' | 'reports' | 'settings';
+export type Page = 'dashboard' | 'products' | 'orders' | 'offers' | 'reports' | 'settings';
 
 export interface User {
   id: number;
@@ -34,6 +34,31 @@ export interface Offer {
   description: string;
   promoCode: string;
 }
+
+export type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+
+export interface OrderItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  date: string; // ISO string format
+  totalAmount: number;
+  status: OrderStatus;
+  items: OrderItem[];
+}
+
+export interface OrdersApiResponse {
+  orders: Order[];
+  totalCount: number;
+}
+
 
 export interface AppContextType {
   activePage: Page;

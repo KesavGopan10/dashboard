@@ -1,4 +1,4 @@
-import { Product, ProductCategory, ProductsApiResponse, SortConfig, User, Offer } from '../types';
+import { Product, ProductCategory, ProductsApiResponse, SortConfig, User, Offer, Order, OrderStatus, OrdersApiResponse } from '../types';
 
 // --- IN-MEMORY DATABASE ---
 let products: Product[] = [
@@ -24,6 +24,24 @@ let offers: Offer[] = [
   { id: 1, title: 'Summer Kick-off Sale', description: 'Get 25% off on all apparel. Perfect for the sunny days ahead!', promoCode: 'SUNNY25' },
   { id: 2, title: 'Electronics Bonanza', description: 'Save $50 on any electronics purchase over $500. Upgrade your tech today.', promoCode: 'TECH50' },
   { id: 3, title: 'New User Welcome', description: 'First time here? Enjoy 15% off your entire first order as a welcome gift!', promoCode: 'WELCOME15' },
+];
+
+let orders: Order[] = [
+    { id: 'ORD-10015', customerName: 'Liam Johnson', customerEmail: 'liam.j@example.com', date: '2023-10-28T14:48:00.000Z', totalAmount: 145.99, status: 'Delivered', items: [{ productId: 2, productName: 'Mechanical Keyboard', quantity: 1, price: 120.00}, { productId: 1, productName: 'Wireless Mouse', quantity: 1, price: 25.99 }] },
+    { id: 'ORD-10014', customerName: 'Olivia Smith', customerEmail: 'olivia.s@example.com', date: '2023-10-27T11:23:00.000Z', totalAmount: 199.50, status: 'Delivered', items: [{ productId: 3, productName: 'Desk Chair', quantity: 1, price: 199.50}] },
+    { id: 'ORD-10013', customerName: 'Noah Williams', customerEmail: 'noah.w@example.com', date: '2023-10-27T09:15:00.000Z', totalAmount: 350.00, status: 'Shipped', items: [{ productId: 4, productName: 'LED Monitor', quantity: 1, price: 350.00}] },
+    { id: 'ORD-10012', customerName: 'Emma Brown', customerEmail: 'emma.b@example.com', date: '2023-10-26T18:02:00.000Z', totalAmount: 24.00, status: 'Shipped', items: [{ productId: 5, productName: 'Coffee Mug', quantity: 2, price: 12.00}] },
+    { id: 'ORD-10011', customerName: 'Oliver Jones', customerEmail: 'oliver.j@example.com', date: '2023-10-25T13:45:00.000Z', totalAmount: 45.00, status: 'Processing', items: [{ productId: 6, productName: 'Laptop Stand', quantity: 1, price: 45.00}] },
+    { id: 'ORD-10010', customerName: 'Ava Garcia', customerEmail: 'ava.g@example.com', date: '2023-10-25T10:10:00.000Z', totalAmount: 59.99, status: 'Processing', items: [{ productId: 7, productName: 'USB-C Hub', quantity: 1, price: 59.99}] },
+    { id: 'ORD-10009', customerName: 'Elijah Miller', customerEmail: 'elijah.m@example.com', date: '2023-10-24T20:55:00.000Z', totalAmount: 499.00, status: 'Pending', items: [{ productId: 8, productName: 'Standing Desk', quantity: 1, price: 499.00}] },
+    { id: 'ORD-10008', customerName: 'Charlotte Davis', customerEmail: 'charlotte.d@example.com', date: '2023-10-24T16:20:00.000Z', totalAmount: 249.99, status: 'Cancelled', items: [{ productId: 9, productName: 'Noise Cancelling Headphones', quantity: 1, price: 249.99}] },
+    { id: 'ORD-10007', customerName: 'James Rodriguez', customerEmail: 'james.r@example.com', date: '2023-10-23T11:30:00.000Z', totalAmount: 71.00, status: 'Delivered', items: [{ productId: 10, productName: 'Ergonomic Footrest', quantity: 2, price: 35.50}] },
+    { id: 'ORD-10006', customerName: 'Sophia Wilson', customerEmail: 'sophia.w@example.com', date: '2023-10-22T09:05:00.000Z', totalAmount: 22.50, status: 'Shipped', items: [{ productId: 11, productName: 'Lipstick', quantity: 1, price: 22.50}] },
+    { id: 'ORD-10005', customerName: 'Benjamin Martinez', customerEmail: 'benjamin.m@example.com', date: '2023-10-21T17:40:00.000Z', totalAmount: 50.00, status: 'Delivered', items: [{ productId: 12, productName: 'Cotton T-Shirt', quantity: 2, price: 25.00}] },
+    { id: 'ORD-10004', customerName: 'Isabella Anderson', customerEmail: 'isabella.a@example.com', date: '2023-10-20T12:00:00.000Z', totalAmount: 18.99, status: 'Delivered', items: [{ productId: 13, productName: 'Hardcover Novel', quantity: 1, price: 18.99}] },
+    { id: 'ORD-10003', customerName: 'Lucas Taylor', customerEmail: 'lucas.t@example.com', date: '2023-10-19T15:18:00.000Z', totalAmount: 30.00, status: 'Processing', items: [{ productId: 14, productName: 'Canvas Tote Bag', quantity: 2, price: 15.00}] },
+    { id: 'ORD-10002', customerName: 'Mia Thomas', customerEmail: 'mia.t@example.com', date: '2023-10-18T10:25:00.000Z', totalAmount: 179.98, status: 'Shipped', items: [{ productId: 15, productName: 'Blender', quantity: 2, price: 89.99}] },
+    { id: 'ORD-10001', customerName: 'Henry Hernandez', customerEmail: 'henry.h@example.com', date: '2023-10-17T19:00:00.000Z', totalAmount: 42.00, status: 'Delivered', items: [{ productId: 16, productName: 'Mascara', quantity: 3, price: 14.00}] },
 ];
 
 
@@ -233,6 +251,66 @@ export const deleteOffer = async (id: number): Promise<{ success: boolean }> => 
         throw new Error("Offer not found");
     }
     return { success: true };
+};
+
+
+// --- API REFERENCE: ORDERS ---
+
+/**
+ * Endpoint: GET /api/orders
+ * Fetches a paginated, sorted, and searchable list of orders.
+ * @param {{page: number, limit: number, search?: string, sortBy?: keyof Order, sortOrder?: 'ascending' | 'descending'}} params
+ * @returns {Promise<OrdersApiResponse>} - An object containing the orders for the page and the total count.
+ */
+export const getOrders = async (params: { page: number, limit: number, search?: string, sortBy?: keyof Order | null, sortOrder?: 'ascending' | 'descending' }): Promise<OrdersApiResponse> => {
+  await delay(800);
+  let filteredOrders = [...orders];
+
+  // 1. Search
+  if (params.search) {
+    const searchTerm = params.search.toLowerCase();
+    filteredOrders = filteredOrders.filter(o =>
+      o.id.toLowerCase().includes(searchTerm) ||
+      o.customerName.toLowerCase().includes(searchTerm) ||
+      o.customerEmail.toLowerCase().includes(searchTerm)
+    );
+  }
+
+  // 2. Sort
+  if (params.sortBy && params.sortOrder) {
+    const { key, direction } = { key: params.sortBy, direction: params.sortOrder };
+    filteredOrders.sort((a, b) => {
+      const valA = a[key];
+      const valB = b[key];
+      if (valA < valB) return direction === 'ascending' ? -1 : 1;
+      if (valA > valB) return direction === 'ascending' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // 3. Paginate
+  const totalCount = filteredOrders.length;
+  const startIndex = (params.page - 1) * params.limit;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + params.limit);
+  
+  return { orders: paginatedOrders, totalCount };
+};
+
+/**
+ * Endpoint: PATCH /api/orders/:id
+ * Updates an existing order's status.
+ * @param {string} id - The ID of the order to update.
+ * @param {OrderStatus} status - The new status for the order.
+ * @returns {Promise<Order>} - The updated order.
+ */
+export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<Order> => {
+    await delay(600);
+    let orderToUpdate = orders.find(o => o.id === id);
+    if (!orderToUpdate) {
+        throw new Error("Order not found");
+    }
+    orderToUpdate.status = status;
+    return orderToUpdate;
 };
 
 

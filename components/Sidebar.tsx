@@ -1,6 +1,7 @@
 
+
 import React, { useState, useContext } from 'react';
-import { DashboardIcon, ProductsIcon, ReportsIcon, SettingsIcon, LogoutIcon, MenuIcon, XIcon, TagIcon } from './icons';
+import { DashboardIcon, ProductsIcon, ReportsIcon, SettingsIcon, LogoutIcon, MenuIcon, XIcon, TagIcon, OrderIcon } from './icons';
 import { AppContext } from '../contexts/AppContext';
 import { Page } from '../types';
 
@@ -68,6 +69,7 @@ const Sidebar: React.FC = () => {
         <nav className="flex-1 space-y-2">
           <NavLink icon={<DashboardIcon className="h-6 w-6" />} label="Dashboard" active={activePage === 'dashboard'} onClick={() => handleNavigate('dashboard')} />
           <NavLink icon={<ProductsIcon className="h-6 w-6" />} label="Products" active={activePage === 'products'} onClick={() => handleNavigate('products')} />
+          <NavLink icon={<OrderIcon className="h-6 w-6" />} label="Orders" active={activePage === 'orders'} onClick={() => handleNavigate('orders')} />
           <NavLink icon={<TagIcon className="h-6 w-6" />} label="Offers" active={activePage === 'offers'} onClick={() => handleNavigate('offers')} />
           <NavLink icon={<ReportsIcon className="h-6 w-6" />} label="Reports" active={activePage === 'reports'} onClick={() => handleNavigate('reports')} />
           <NavLink icon={<SettingsIcon className="h-6 w-6" />} label="Settings" active={activePage === 'settings'} onClick={() => handleNavigate('settings')} />

@@ -23,7 +23,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   
   const [totalProducts, setTotalProducts] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig<Product>>({ key: 'id', direction: 'descending' });
 
   const { showToast } = useContext(AppContext);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);

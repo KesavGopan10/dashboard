@@ -1,10 +1,12 @@
 
 
+
 import React, { useContext } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
+import OrdersPage from './pages/OrdersPage';
 import OffersPage from './pages/OffersPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -25,6 +27,10 @@ const App: React.FC = () => {
     products: {
       title: 'Products',
       description: 'Manage your products, add new ones, and see their performance.',
+    },
+    orders: {
+      title: 'Customer Orders',
+      description: 'Track, manage, and fulfill customer orders.',
     },
     offers: {
       title: 'Exclusive Offers',
@@ -48,6 +54,8 @@ const App: React.FC = () => {
         return <DashboardPage />;
       case 'products':
         return <ProductsPage />;
+      case 'orders':
+        return <OrdersPage />;
       case 'offers':
         return <OffersPage />;
       case 'reports':
