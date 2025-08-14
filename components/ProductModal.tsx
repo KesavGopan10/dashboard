@@ -46,14 +46,19 @@ interface ProductModalProps {
 }
 
 type FormErrors = {
-  [key in keyof Omit<Product, 'id' | 'categoryId' | 'imageUrl' | 'isFeatured' | 'categoryName'>]?: string;
-} & { categoryId?: string };
+  name?: string;
+  categoryId?: string;
+  price?: string;
+  stock?: string;
+  sold?: string;
+  imageUrls?: string;
+};
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product }) => {
-  const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', sold: '', imageUrl: '' };
+  const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', sold: '', imageUrls: '' };
   
   const getInitialState = () => product 
-    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), sold: String(product.sold), imageUrl: product.imageUrl || '' }
+    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), sold: String(product.sold), imageUrls: product.imageUrls?.join('\n') || '' }
     : newProductInitialState;
 
   const [formData, setFormData] = useState(getInitialState());
@@ -85,7 +90,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormErrors]) {
@@ -117,7 +122,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       price: Number(formData.price),
       stock: Number(formData.stock),
       sold: Number(formData.sold),
-      imageUrl: formData.imageUrl || undefined,
+      imageUrls: formData.imageUrls.split('\n').filter(url => url.trim() !== ''),
     };
     
     try {
@@ -146,14 +151,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           <InputField name="name" label="Product Name" />
           
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
-            <input
-                id="imageUrl"
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
+            <label htmlFor="imageUrls" className="block text-sm font-medium text-gray-700 mb-1">Image URLs (one per line)</label>
+            <textarea
+                id="imageUrls"
+                name="imageUrls"
+                rows={3}
+                value={formData.imageUrls}
                 onChange={handleChange}
-                placeholder="https://example.com/image.png"
+                placeholder="https://example.com/image1.png&#10;https://example.com/image2.png"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D7A79]"
             />
           </div>

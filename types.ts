@@ -3,12 +3,13 @@ export interface Category {
   name: string;
   description: string;
   imageUrl: string;
+  productCount?: number;
 }
 
 export interface Product {
   id: number;
   name: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   categoryId: number;
   categoryName?: string; // For display purposes, joined in API
   price: number;

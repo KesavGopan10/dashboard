@@ -7,10 +7,11 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  children?: React.ReactNode;
   variant?: 'primary' | 'destructive';
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message, variant = 'destructive' }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, title, message, children, variant = 'destructive' }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +68,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, 
         </button>
         <h2 id="confirmation-title" className="text-xl font-bold mb-4 text-gray-800">{title}</h2>
         <p className="text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-end space-x-4 mt-6">
+        {children && <div className="mb-6">{children}</div>}
+        <div className="flex justify-end space-x-4">
           <button onClick={onClose} className="px-6 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 font-semibold">
             Cancel
           </button>

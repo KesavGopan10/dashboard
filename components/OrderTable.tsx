@@ -6,6 +6,7 @@ import Pagination from './Pagination';
 import SortableTableHeader from './SortableTableHeader';
 import LoadingSpinner from './LoadingSpinner';
 import { useDebounce } from '../hooks/useDebounce';
+import { ChevronDownIcon } from './icons';
 
 const ORDERS_PER_PAGE = 8;
 const ALL_STATUSES: OrderStatus[] = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
@@ -28,6 +29,8 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<SortConfig<Order>>({ key: 'date', direction: 'descending' });
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
 
   const { showToast } = useContext(AppContext);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -75,9 +78,12 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     try {
       await updateOrderStatus(orderId, newStatus);
       showToast(`Order #${orderId.substring(0,6)} status updated.`);
-      fetchAndSetOrders(currentPage);
+      // Optimistically update the UI before refetching
+      setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: newStatus} : o));
     } catch (err) {
       showToast('Failed to update order status.');
+      // Refetch on error to revert optimistic update
+      fetchAndSetOrders(currentPage);
     } finally {
       setUpdatingStatus(null);
     }
@@ -89,6 +95,10 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
+  };
+  
+  const handleToggleExpand = (orderId: string) => {
+    setExpandedOrderId(prevId => (prevId === orderId ? null : orderId));
   };
 
 
@@ -103,31 +113,61 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
       return <tr><td colSpan={6} className="text-center py-16 text-gray-500">No orders found.</td></tr>;
     }
     return orders.map((order) => (
-      <tr key={order.id} className="bg-white border-b hover:bg-gray-50">
-        <td data-label="Order ID" className="px-6 py-4 font-medium text-[#2D7A79] hover:underline font-mono text-sm">#{order.id.substring(4)}</td>
-        <td data-label="Customer" className="px-6 py-4">
-            <div className="font-medium text-gray-900">{order.customerName}</div>
-            <div className="text-xs text-gray-500">{order.customerEmail}</div>
-        </td>
-        <td data-label="Date" className="px-6 py-4">{new Date(order.date).toLocaleDateString()}</td>
-        <td data-label="Total" className="px-6 py-4 font-medium">${order.totalAmount.toFixed(2)}</td>
-        <td data-label="Status" className="px-6 py-4">
-            <div className="flex items-center">
-              <select 
-                value={order.status}
-                onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                disabled={updatingStatus === order.id}
-                className={`w-32 p-1.5 border rounded-lg text-xs font-medium focus:ring-2 focus:outline-none transition-colors ${statusBadgeStyles[order.status]}`}
-              >
-                {ALL_STATUSES.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-              {updatingStatus === order.id && <div className="ml-2 w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>}
-            </div>
-        </td>
-        <td data-label="Items" className="px-6 py-4 text-center">{order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
-      </tr>
+      <React.Fragment key={order.id}>
+        <tr className="bg-white border-b hover:bg-gray-50">
+          <td data-label="Order ID" className="px-6 py-4">
+             <button onClick={() => handleToggleExpand(order.id)} className="flex items-center text-[#2D7A79] hover:underline font-mono text-sm group">
+                  #{order.id.substring(4)}
+                  <ChevronDownIcon className={`w-4 h-4 ml-2 transition-transform transform group-hover:text-gray-700 ${expandedOrderId === order.id ? 'rotate-180' : ''}`} />
+              </button>
+          </td>
+          <td data-label="Customer" className="px-6 py-4">
+              <div className="font-medium text-gray-900">{order.customerName}</div>
+              <div className="text-xs text-gray-500">{order.customerEmail}</div>
+          </td>
+          <td data-label="Date" className="px-6 py-4">{new Date(order.date).toLocaleDateString()}</td>
+          <td data-label="Total" className="px-6 py-4 font-medium">${order.totalAmount.toFixed(2)}</td>
+          <td data-label="Status" className="px-6 py-4">
+              <div className="flex items-center">
+                <select 
+                  value={order.status}
+                  onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                  disabled={updatingStatus === order.id}
+                  className={`w-32 p-1.5 border rounded-lg text-xs font-medium focus:ring-2 focus:outline-none transition-colors ${statusBadgeStyles[order.status]}`}
+                >
+                  {ALL_STATUSES.map(status => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+                {updatingStatus === order.id && <div className="ml-2 w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>}
+              </div>
+          </td>
+          <td data-label="Items" className="px-6 py-4 text-center">{order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
+        </tr>
+        {expandedOrderId === order.id && (
+           <tr className="responsive-table-details bg-gray-50 md:bg-gray-50/50">
+                <td colSpan={6} className="p-0" data-label="">
+                  <div className="p-4">
+                    <h4 className="font-bold text-gray-700 mb-2">Order Items</h4>
+                    <ul className="space-y-2">
+                      {order.items.map(item => (
+                        <li key={item.productId} className="flex flex-col sm:flex-row justify-between sm:items-center text-sm p-3 rounded-md bg-white border border-gray-200 shadow-sm">
+                          <div>
+                            <span className="font-semibold text-gray-800">{item.productName}</span>
+                            <span className="text-gray-500 ml-2 text-xs">(ID: {item.productId})</span>
+                          </div>
+                          <div className="text-left sm:text-right mt-2 sm:mt-0">
+                            <div className="text-gray-600">Qty: {item.quantity}</div>
+                            <div className="text-gray-800 font-medium">${item.price.toFixed(2)} each</div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </td>
+            </tr>
+        )}
+      </React.Fragment>
     ));
   };
 

@@ -14,23 +14,23 @@ let categories: Category[] = [
 ];
 
 let products: Product[] = [
-    { id: 1, name: 'Wireless Mouse', categoryId: 2, price: 25.99, stock: 150, sold: 75, imageUrl: 'https://picsum.photos/id/0/200/200', isFeatured: true },
-    { id: 2, name: 'Mechanical Keyboard', categoryId: 2, price: 120.00, stock: 80, sold: 40, imageUrl: 'https://picsum.photos/id/1/200/200', isFeatured: false },
+    { id: 1, name: 'Wireless Mouse', categoryId: 2, price: 25.99, stock: 150, sold: 75, imageUrls: ['https://picsum.photos/id/0/200/200'], isFeatured: true },
+    { id: 2, name: 'Mechanical Keyboard', categoryId: 2, price: 120.00, stock: 80, sold: 40, imageUrls: ['https://picsum.photos/id/1/200/200'], isFeatured: false },
     { id: 3, name: 'Travel Pillow', categoryId: 3, price: 199.50, stock: 50, sold: 15, isFeatured: true },
-    { id: 4, name: 'Portable Monitor', categoryId: 2, price: 350.00, stock: 100, sold: 60, imageUrl: 'https://picsum.photos/id/2/200/200', isFeatured: false },
-    { id: 5, name: 'Local Artisan Coffee', categoryId: 4, price: 12.00, stock: 300, sold: 125, imageUrl: 'https://picsum.photos/id/3/200/200', isFeatured: true },
+    { id: 4, name: 'Portable Monitor', categoryId: 2, price: 350.00, stock: 100, sold: 60, imageUrls: ['https://picsum.photos/id/2/200/200'], isFeatured: false },
+    { id: 5, name: 'Local Artisan Coffee', categoryId: 4, price: 12.00, stock: 300, sold: 125, imageUrls: ['https://picsum.photos/id/3/200/200'], isFeatured: true },
     { id: 6, name: 'Passport Holder', categoryId: 2, price: 45.00, stock: 200, sold: 90, isFeatured: false },
-    { id: 7, name: 'Universal Adapter', categoryId: 2, price: 59.99, stock: 120, sold: 85, imageUrl: 'https://picsum.photos/id/4/200/200', isFeatured: true },
+    { id: 7, name: 'Universal Adapter', categoryId: 2, price: 59.99, stock: 120, sold: 85, imageUrls: ['https://picsum.photos/id/4/200/200'], isFeatured: true },
     { id: 8, name: 'Hand-woven Scarf', categoryId: 3, price: 49.90, stock: 30, sold: 10, isFeatured: false },
-    { id: 9, name: 'Noise Cancelling Headphones', categoryId: 2, price: 249.99, stock: 70, sold: 55, imageUrl: 'https://picsum.photos/id/5/200/200', isFeatured: false },
+    { id: 9, name: 'Noise Cancelling Headphones', categoryId: 2, price: 249.99, stock: 70, sold: 55, imageUrls: ['https://picsum.photos/id/5/200/200'], isFeatured: false },
     { id: 10, name: 'Travel Journal', categoryId: 7, price: 35.50, stock: 150, sold: 30, isFeatured: false },
-    { id: 11, name: 'Sunscreen SPF 50', categoryId: 5, price: 22.50, stock: 200, sold: 95, imageUrl: 'https://picsum.photos/id/6/200/200', isFeatured: false },
+    { id: 11, name: 'Sunscreen SPF 50', categoryId: 5, price: 22.50, stock: 200, sold: 95, imageUrls: ['https://picsum.photos/id/6/200/200'], isFeatured: false },
     { id: 12, name: 'Linen Shirt', categoryId: 6, price: 25.00, stock: 400, sold: 250, isFeatured: false },
-    { id: 13, name: 'City Guide Book', categoryId: 7, price: 18.99, stock: 120, sold: 45, imageUrl: 'https://picsum.photos/id/7/200/200', isFeatured: false },
-    { id: 14, name: 'Reusable Water Bottle', categoryId: 8, price: 15.00, stock: 300, sold: 180, imageUrl: 'https://picsum.photos/id/8/200/200', isFeatured: false },
+    { id: 13, name: 'City Guide Book', categoryId: 7, price: 18.99, stock: 120, sold: 45, imageUrls: ['https://picsum.photos/id/7/200/200'], isFeatured: false },
+    { id: 14, name: 'Reusable Water Bottle', categoryId: 8, price: 15.00, stock: 300, sold: 180, imageUrls: ['https://picsum.photos/id/8/200/200'], isFeatured: false },
     { id: 15, name: 'Gourmet Chocolate Box', categoryId: 4, price: 89.99, stock: 90, sold: 35, isFeatured: false },
-    { id: 16, name: 'Face Mist', categoryId: 5, price: 14.00, stock: 150, sold: 88, imageUrl: 'https://picsum.photos/id/9/200/200', isFeatured: false },
-    { id: 17, name: 'Eiffel Tower Keychain', categoryId: 1, price: 9.99, stock: 500, sold: 250, imageUrl: 'https://picsum.photos/id/10/200/200', isFeatured: false },
+    { id: 16, name: 'Face Mist', categoryId: 5, price: 14.00, stock: 150, sold: 88, imageUrls: ['https://picsum.photos/id/9/200/200'], isFeatured: false },
+    { id: 17, name: 'Eiffel Tower Keychain', categoryId: 1, price: 9.99, stock: 500, sold: 250, imageUrls: ['https://picsum.photos/id/10/200/200'], isFeatured: false },
 ];
 
 let offers: Offer[] = [
@@ -254,7 +254,17 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean }> =
  */
 export const getCategories = async (): Promise<Category[]> => {
     await delay(500);
-    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    const productCounts = products.reduce((acc, product) => {
+        acc[product.categoryId] = (acc[product.categoryId] || 0) + 1;
+        return acc;
+    }, {} as Record<number, number>);
+
+    const categoriesWithCounts = categories.map(category => ({
+        ...category,
+        productCount: productCounts[category.id] || 0,
+    }));
+
+    return [...categoriesWithCounts].sort((a, b) => a.name.localeCompare(b.name));
 };
 
 /**
@@ -291,15 +301,30 @@ export const updateCategory = async (id: number, updatedData: Partial<Omit<Categ
  * Endpoint: DELETE /api/categories/:id
  * Deletes a category.
  * @param {number} id
+ * @param {{ deleteProducts: boolean }} options
  * @returns {Promise<{ success: boolean }>}
  */
-export const deleteCategory = async (id: number): Promise<{ success: boolean }> => {
+export const deleteCategory = async (id: number, options: { deleteProducts: boolean }): Promise<{ success: boolean }> => {
     await delay(500);
     const initialLength = categories.length;
-    // Check if any product is using this category
-    if (products.some(p => p.categoryId === id)) {
-        throw new Error("Cannot delete category as it is currently in use by products.");
+    const generalCategoryId = 8; // Assuming 'General' category has ID 8
+    
+    if (id === generalCategoryId) {
+        throw new Error("The 'General' category cannot be deleted.");
     }
+
+    if (options.deleteProducts) {
+        products = products.filter(p => p.categoryId !== id);
+    } else {
+        // Re-assign products to the 'General' category
+        products = products.map(p => {
+            if (p.categoryId === id) {
+                return { ...p, categoryId: generalCategoryId };
+            }
+            return p;
+        });
+    }
+
     categories = categories.filter(c => c.id !== id);
     if (categories.length === initialLength) {
         throw new Error("Category not found");

@@ -159,8 +159,8 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
           </button>
         </td>
         <td data-label="Image" className="px-6 py-4">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
+          {product.imageUrls && product.imageUrls.length > 0 ? (
+            <img src={product.imageUrls[0]} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
           ) : (
             <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
               <ProductsIcon className="w-6 h-6 text-gray-400" />

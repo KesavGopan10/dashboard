@@ -15,6 +15,7 @@ const CategoryTable: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+    const [deleteProducts, setDeleteProducts] = useState(false);
 
     const { showToast } = useContext(AppContext);
 
@@ -46,6 +47,11 @@ const CategoryTable: React.FC = () => {
         setIsModalOpen(true);
     };
 
+    const handleDeleteClick = (category: Category) => {
+        setCategoryToDelete(category);
+        setDeleteProducts(false);
+    };
+
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingCategory(null);
@@ -72,7 +78,7 @@ const CategoryTable: React.FC = () => {
         if (!categoryToDelete) return;
 
         try {
-            await deleteCategory(categoryToDelete.id);
+            await deleteCategory(categoryToDelete.id, { deleteProducts });
             showToast("Category deleted successfully.");
             fetchCategories();
         } catch (error: any) {
@@ -102,12 +108,13 @@ const CategoryTable: React.FC = () => {
                         <img src={category.imageUrl} alt={category.name} className="w-full h-40 object-cover"/>
                         <div className="p-5 flex-grow flex flex-col">
                             <h4 className="text-lg font-bold text-gray-800">{category.name}</h4>
-                            <p className="text-sm text-gray-600 mt-1 flex-grow">{category.description}</p>
+                            <p className="text-sm font-medium text-gray-500 mt-1">{category.productCount} Product{category.productCount !== 1 ? 's' : ''}</p>
+                            <p className="text-sm text-gray-600 mt-2 flex-grow">{category.description}</p>
                             <div className="flex justify-end space-x-2 mt-4">
                                 <button onClick={() => handleEditClick(category)} className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors" aria-label={`Edit ${category.name}`}>
                                     <EditIcon className="w-5 h-5" />
                                 </button>
-                                <button onClick={() => setCategoryToDelete(category)} className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors" aria-label={`Delete ${category.name}`}>
+                                <button onClick={() => handleDeleteClick(category)} className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-100 transition-colors" aria-label={`Delete ${category.name}`}>
                                     <DeleteIcon className="w-5 h-5" />
                                 </button>
                             </div>
@@ -143,9 +150,25 @@ const CategoryTable: React.FC = () => {
                 onClose={() => setCategoryToDelete(null)}
                 onConfirm={handleDelete}
                 title="Delete Category"
-                message={`Are you sure you want to delete "${categoryToDelete?.name}"? This action cannot be undone.`}
+                message={
+                    deleteProducts
+                      ? `Are you sure you want to delete "${categoryToDelete?.name}" and all of its ${categoryToDelete?.productCount} associated products? This action cannot be undone.`
+                      : `Are you sure you want to delete "${categoryToDelete?.name}"? Its products will be moved to the 'General' category.`
+                }
                 variant="destructive"
-            />
+            >
+              {categoryToDelete?.productCount > 0 && (
+                <label className="flex items-center space-x-3 cursor-pointer p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <input 
+                        type="checkbox"
+                        checked={deleteProducts}
+                        onChange={(e) => setDeleteProducts(e.target.checked)}
+                        className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-red-800 font-medium">Delete all {categoryToDelete?.productCount} products in this category</span>
+                </label>
+              )}
+            </ConfirmationModal>
         </>
     );
 };
