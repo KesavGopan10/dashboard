@@ -55,16 +55,18 @@ type FormErrors = {
 };
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product }) => {
-  const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', sold: '', imageUrls: '' };
+  const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', sold: '', imageUrls: [] as string[] };
   
   const getInitialState = () => product 
-    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), sold: String(product.sold), imageUrls: product.imageUrls?.join('\n') || '' }
+    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), sold: String(product.sold), imageUrls: product.imageUrls || [] }
     : newProductInitialState;
 
   const [formData, setFormData] = useState(getInitialState());
   const [categories, setCategories] = useState<Category[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState('');
+  const [imageUrlError, setImageUrlError] = useState<string | null>(null);
   
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +77,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       setFormData(getInitialState());
       setErrors({});
       setIsSubmitting(false);
+      setCurrentImageUrl('');
+      setImageUrlError(null);
       
       const fetchCategories = async () => {
         try {
@@ -90,13 +94,41 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormErrors]) {
         setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
+
+  const handleAddImage = () => {
+    if (!currentImageUrl.trim()) {
+        setImageUrlError('URL cannot be empty.');
+        return;
+    }
+    try {
+        new URL(currentImageUrl);
+    } catch (_) {
+        setImageUrlError('Please enter a valid URL.');
+        return;
+    }
+    if (formData.imageUrls.includes(currentImageUrl)) {
+        setImageUrlError('This image URL has already been added.');
+        return;
+    }
+
+    setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, currentImageUrl.trim()] }));
+    setCurrentImageUrl('');
+    setImageUrlError(null);
+};
+
+const handleRemoveImage = (urlToRemove: string) => {
+    setFormData(prev => ({
+        ...prev,
+        imageUrls: prev.imageUrls.filter(url => url !== urlToRemove)
+    }));
+};
 
   const validate = () => {
     const newErrors: FormErrors = {};
@@ -122,7 +154,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       price: Number(formData.price),
       stock: Number(formData.stock),
       sold: Number(formData.sold),
-      imageUrls: formData.imageUrls.split('\n').filter(url => url.trim() !== ''),
+      imageUrls: formData.imageUrls,
     };
     
     try {
@@ -142,7 +174,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+      <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-lg relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800" aria-label="Close modal">
           <XIcon className="w-6 h-6" />
         </button>
@@ -151,16 +183,44 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           <InputField name="name" label="Product Name" />
           
           <div>
-            <label htmlFor="imageUrls" className="block text-sm font-medium text-gray-700 mb-1">Image URLs (one per line)</label>
-            <textarea
-                id="imageUrls"
-                name="imageUrls"
-                rows={3}
-                value={formData.imageUrls}
-                onChange={handleChange}
-                placeholder="https://example.com/image1.png&#10;https://example.com/image2.png"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D7A79]"
-            />
+            <label htmlFor="imageUrlInput" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <div className="flex items-start gap-2">
+                <div className="flex-grow">
+                    <input
+                        id="imageUrlInput"
+                        type="url"
+                        value={currentImageUrl}
+                        onChange={(e) => { setCurrentImageUrl(e.target.value); setImageUrlError(null); }}
+                        placeholder="https://example.com/image.png"
+                        className={`w-full p-3 border rounded-lg focus:ring-2 ${imageUrlError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
+                        aria-invalid={!!imageUrlError}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddImage(); }}}
+                    />
+                    {imageUrlError && <p className="text-red-600 text-sm mt-1">{imageUrlError}</p>}
+                </div>
+                <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="px-5 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 shadow-sm transition-colors flex-shrink-0"
+                >
+                    Add
+                </button>
+            </div>
+            {formData.imageUrls.length > 0 && (
+                <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Added Images: ({formData.imageUrls.length})</h4>
+                    <ul className="max-h-32 overflow-y-auto space-y-2 rounded-lg border bg-gray-50 p-2">
+                        {formData.imageUrls.map((url, index) => (
+                            <li key={index} className="flex items-center justify-between text-sm bg-white p-2 rounded shadow-sm border">
+                                <span className="truncate text-gray-600 flex-1 mr-2" title={url}>{url}</span>
+                                <button type="button" onClick={() => handleRemoveImage(url)} className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100" aria-label={`Remove ${url}`}>
+                                    <XIcon className="w-4 h-4" />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
           </div>
 
           <div>
@@ -181,9 +241,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             {errors.categoryId && <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>}
           </div>
 
-          <InputField name="price" label="Price" type="number" />
-          <InputField name="stock" label="Stock" type="number" />
-          <InputField name="sold" label="Sold" type="number" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField name="price" label="Price" type="number" />
+              <InputField name="stock" label="Stock" type="number" />
+              <InputField name="sold" label="Sold" type="number" />
+          </div>
 
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 disabled:opacity-50">Cancel</button>
