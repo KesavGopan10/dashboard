@@ -1,12 +1,20 @@
-export type ProductCategory = 'Electronics' | 'Furniture' | 'Kitchenware' | 'Accessories' | 'Cosmetics' | 'Apparel' | 'Books' | 'General';
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+}
 
 export interface Product {
   id: number;
   name: string;
-  category: ProductCategory;
+  imageUrl?: string;
+  categoryId: number;
+  categoryName?: string; // For display purposes, joined in API
   price: number;
   stock: number;
   sold: number;
+  isFeatured: boolean;
 }
 
 export interface ProductsApiResponse {
@@ -19,7 +27,7 @@ export type SortConfig<T> = {
   direction: 'ascending' | 'descending';
 }
 
-export type Page = 'dashboard' | 'products' | 'orders' | 'offers' | 'reports' | 'settings';
+export type Page = 'dashboard' | 'products' | 'categories' | 'orders' | 'offers' | 'reports' | 'settings' | 'websiteContent';
 
 export interface User {
   id: number;
@@ -57,6 +65,19 @@ export interface Order {
 export interface OrdersApiResponse {
   orders: Order[];
   totalCount: number;
+}
+
+export interface BannerImage {
+  id: number;
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+}
+
+export interface WebsiteContent {
+  key: string;
+  label: string;
+  value: string;
 }
 
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Product, ProductCategory } from '../types';
+import { Product, Category } from '../types';
+import { getCategories } from '../api/mockApi';
 import { XIcon } from './icons';
 
 const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
@@ -45,20 +46,18 @@ interface ProductModalProps {
 }
 
 type FormErrors = {
-  [key in keyof Omit<Product, 'id' | 'category'>]?: string;
-} & { category?: string };
-
-const categories: ProductCategory[] = ['Electronics', 'Furniture', 'Kitchenware', 'Accessories', 'Cosmetics', 'Apparel', 'Books', 'General'];
-
+  [key in keyof Omit<Product, 'id' | 'categoryId' | 'imageUrl' | 'isFeatured' | 'categoryName'>]?: string;
+} & { categoryId?: string };
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product }) => {
-  const newProductInitialState = { name: '', category: '', price: '', stock: '', sold: '' };
+  const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', sold: '', imageUrl: '' };
   
   const getInitialState = () => product 
-    ? { name: product.name, category: product.category, price: String(product.price), stock: String(product.stock), sold: String(product.sold) }
+    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), sold: String(product.sold), imageUrl: product.imageUrl || '' }
     : newProductInitialState;
 
   const [formData, setFormData] = useState(getInitialState());
+  const [categories, setCategories] = useState<Category[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -71,6 +70,16 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       setFormData(getInitialState());
       setErrors({});
       setIsSubmitting(false);
+      
+      const fetchCategories = async () => {
+        try {
+            const fetchedCategories = await getCategories();
+            setCategories(fetchedCategories);
+        } catch(e) {
+            console.error("Failed to fetch categories for modal");
+        }
+      };
+      fetchCategories();
     }
   }, [isOpen, product]);
 
@@ -87,7 +96,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const validate = () => {
     const newErrors: FormErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Product name is required.';
-    if (!formData.category) newErrors.category = 'Category is required.';
+    if (!formData.categoryId) newErrors.categoryId = 'Category is required.';
     if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) < 0) newErrors.price = 'Please enter a valid price.';
     if (!formData.stock || isNaN(Number(formData.stock)) || !Number.isInteger(Number(formData.stock)) || Number(formData.stock) < 0) newErrors.stock = 'Please enter a valid stock amount.';
     if (formData.sold === '' || isNaN(Number(formData.sold)) || !Number.isInteger(Number(formData.sold)) || Number(formData.sold) < 0) newErrors.sold = 'Please enter a valid sold amount.';
@@ -102,23 +111,26 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     
     setIsSubmitting(true);
     const productToSave = {
-      ...(product ? { id: product.id } : {}),
+      ...(product ? { id: product.id, isFeatured: product.isFeatured } : { isFeatured: false }),
       name: formData.name,
-      category: formData.category as ProductCategory,
+      categoryId: Number(formData.categoryId),
       price: Number(formData.price),
       stock: Number(formData.stock),
       sold: Number(formData.sold),
+      imageUrl: formData.imageUrl || undefined,
     };
     
-    await onSave(productToSave as Product);
-    // The parent will handle closing the modal on successful save.
-    // We set isSubmitting to false in the useEffect cleanup when isOpen changes.
+    try {
+        await onSave(productToSave as Product);
+    } catch(e) {
+        setIsSubmitting(false);
+    }
   };
 
-  const InputField: React.FC<{name: keyof FormErrors, label: string, type?: string, required?: boolean}> = ({name, label, type='text'}) => (
+  const InputField: React.FC<{name: 'name' | 'price' | 'stock' | 'sold', label: string, type?: string}> = ({name, label, type='text'}) => (
     <div>
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <input id={name} type={type} name={name} value={formData[name as 'name' | 'price' | 'stock' | 'sold']} onChange={handleChange} placeholder={`Enter ${label.toLowerCase()}`} min="0" step={type === 'number' ? "0.01" : undefined} className={`w-full p-3 border rounded-lg focus:ring-2 ${errors[name] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`} aria-invalid={!!errors[name]} />
+      <input id={name} type={type} name={name} value={formData[name]} onChange={handleChange} placeholder={`Enter ${label.toLowerCase()}`} min="0" step={type === 'number' ? "0.01" : undefined} className={`w-full p-3 border rounded-lg focus:ring-2 ${errors[name] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`} aria-invalid={!!errors[name]} />
       {errors[name] && <p className="text-red-600 text-sm mt-1">{errors[name]}</p>}
     </div>
   );
@@ -134,21 +146,34 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
           <InputField name="name" label="Product Name" />
           
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
+            <input
+                id="imageUrl"
+                type="url"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                placeholder="https://example.com/image.png"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D7A79]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select
-              id="category"
-              name="category"
-              value={formData.category}
+              id="categoryId"
+              name="categoryId"
+              value={formData.categoryId}
               onChange={handleChange}
-              className={`w-full p-3 border rounded-lg focus:ring-2 ${errors.category ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
-              aria-invalid={!!errors.category}
+              className={`w-full p-3 border rounded-lg focus:ring-2 ${errors.categoryId ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
+              aria-invalid={!!errors.categoryId}
             >
               <option value="" disabled>Select a category</option>
               {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
-            {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
+            {errors.categoryId && <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>}
           </div>
 
           <InputField name="price" label="Price" type="number" />

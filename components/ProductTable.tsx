@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { Product, SortConfig } from '../types';
-import { EditIcon, DeleteIcon } from './icons';
-import { getProducts, addProduct, updateProduct, deleteProduct } from '../api/mockApi';
+import { EditIcon, DeleteIcon, ProductsIcon, StarIcon } from './icons';
+import { getProducts, addProduct, updateProduct, deleteProduct, toggleProductFeaturedStatus } from '../api/mockApi';
 import { AppContext } from '../contexts/AppContext';
 import ConfirmationModal from './ConfirmationModal';
 import ProductModal from './ProductModal';
@@ -29,8 +29,8 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const prevFiltersRef = useRef({ search: debouncedSearchQuery, sort: sortConfig });
-
-  useEffect(() => {
+  
+  const fetchAndSetProducts = useCallback(async () => {
     const filtersChanged = 
       prevFiltersRef.current.search !== debouncedSearchQuery ||
       prevFiltersRef.current.sort.key !== sortConfig.key ||
@@ -41,33 +41,31 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     if (filtersChanged && currentPage !== 1) {
       setCurrentPage(1);
     }
-    
-    const fetchAndSetProducts = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await getProducts({
-          page: pageToFetch,
-          limit: PRODUCTS_PER_PAGE,
-          search: debouncedSearchQuery,
-          sortBy: sortConfig.key,
-          sortOrder: sortConfig.direction,
-        });
-        setProducts(data.products);
-        setTotalProducts(data.totalCount);
-      } catch (err) {
-        setError("Failed to fetch products. Please try again later.");
-        showToast("Failed to fetch products");
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    fetchAndSetProducts();
-
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getProducts({
+        page: pageToFetch,
+        limit: PRODUCTS_PER_PAGE,
+        search: debouncedSearchQuery,
+        sortBy: sortConfig.key,
+        sortOrder: sortConfig.direction,
+      });
+      setProducts(data.products);
+      setTotalProducts(data.totalCount);
+    } catch (err) {
+      setError("Failed to fetch products. Please try again later.");
+      showToast("Failed to fetch products");
+    } finally {
+      setIsLoading(false);
+    }
     prevFiltersRef.current = { search: debouncedSearchQuery, sort: sortConfig };
-
   }, [currentPage, debouncedSearchQuery, sortConfig, showToast]);
+
+  useEffect(() => {
+    fetchAndSetProducts();
+  }, [fetchAndSetProducts]);
 
   const handleAddClick = () => {
     setEditingProduct(null);
@@ -88,7 +86,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         if (products.length === 1 && currentPage > 1) {
             setCurrentPage(currentPage - 1);
         } else {
-             setSortConfig(current => ({...current}));
+             fetchAndSetProducts();
         }
     } catch (error) {
         showToast("Failed to delete product. Please try again.");
@@ -96,6 +94,21 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         setProductToDelete(null); 
     }
   };
+  
+  const handleToggleFeatured = async (productId: number) => {
+    // Optimistic UI update
+    setProducts(prevProducts => prevProducts.map(p => p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p));
+    try {
+      await toggleProductFeaturedStatus(productId);
+      showToast('Featured status updated.');
+      // Optional: refetch to ensure consistency, though optimistic update is usually enough
+      // fetchAndSetProducts(); 
+    } catch (error) {
+      showToast('Failed to update featured status.');
+      // Revert UI on error
+      setProducts(prevProducts => prevProducts.map(p => p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p));
+    }
+  }
 
   const handleSave = async (productData: Omit<Product, 'id'> | Product) => {
     try {
@@ -107,7 +120,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
             showToast("Product added successfully.");
         }
         handleCloseModal();
-        setSortConfig(current => ({...current}));
+        fetchAndSetProducts();
     } catch (error) {
         showToast("Failed to save product.");
         throw error;
@@ -130,18 +143,32 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
 
   const renderTableContent = () => {
     if (isLoading) {
-      return <tr><td colSpan={6} className="text-center py-16"><LoadingSpinner /></td></tr>;
+      return <tr><td colSpan={8} className="text-center py-16"><LoadingSpinner /></td></tr>;
     }
     if (error) {
-      return <tr><td colSpan={6} className="text-center py-16 text-red-500">{error}</td></tr>;
+      return <tr><td colSpan={8} className="text-center py-16 text-red-500">{error}</td></tr>;
     }
     if (products.length === 0) {
-      return <tr><td colSpan={6} className="text-center py-16 text-gray-500">No products found.</td></tr>;
+      return <tr><td colSpan={8} className="text-center py-16 text-gray-500">No products found.</td></tr>;
     }
     return products.map((product) => (
       <tr key={product.id} className="bg-white border-b hover:bg-gray-50">
+         <td data-label="Featured" className="px-6 py-4">
+          <button onClick={() => handleToggleFeatured(product.id)} className={`p-2 rounded-full transition-colors ${product.isFeatured ? 'text-yellow-400 hover:text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`} aria-label={`Mark ${product.name} as featured`}>
+            <StarIcon className="w-6 h-6" />
+          </button>
+        </td>
+        <td data-label="Image" className="px-6 py-4">
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
+              <ProductsIcon className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
+        </td>
         <td data-label="Product Name" className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
-        <td data-label="Category" className="px-6 py-4">{product.category}</td>
+        <td data-label="Category" className="px-6 py-4">{product.categoryName}</td>
         <td data-label="Price" className="px-6 py-4">${product.price.toFixed(2)}</td>
         <td data-label="Stock" className="px-6 py-4">{product.stock}</td>
         <td data-label="Sold" className="px-6 py-4">{product.sold}</td>
@@ -170,8 +197,10 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
+              <th scope="col" className="px-6 py-3">Featured</th>
+              <th scope="col" className="px-6 py-3">Image</th>
               <SortableTableHeader<Product> label="Product Name" sortKey="name" sortConfig={sortConfig} onSort={handleSort} />
-              <SortableTableHeader<Product> label="Category" sortKey="category" sortConfig={sortConfig} onSort={handleSort} />
+              <SortableTableHeader<Product> label="Category" sortKey="categoryName" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Price" sortKey="price" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Stock" sortKey="stock" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Sold" sortKey="sold" sortConfig={sortConfig} onSort={handleSort} />

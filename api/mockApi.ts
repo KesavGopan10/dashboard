@@ -1,23 +1,36 @@
-import { Product, ProductCategory, ProductsApiResponse, SortConfig, User, Offer, Order, OrderStatus, OrdersApiResponse } from '../types';
+import { Product, Category, ProductsApiResponse, SortConfig, User, Offer, Order, OrderStatus, OrdersApiResponse, BannerImage, WebsiteContent } from '../types';
 
 // --- IN-MEMORY DATABASE ---
+
+let categories: Category[] = [
+    { id: 1, name: 'Special Travel Souvenirs', description: 'Unique keepsakes from around the world.', imageUrl: 'https://picsum.photos/id/101/400/300' },
+    { id: 2, name: 'Lifestyle Accessories', description: 'Gadgets and accessories for the modern traveler.', imageUrl: 'https://picsum.photos/id/102/400/300' },
+    { id: 3, name: 'Limited Travel Finds', description: 'Rare and exclusive items discovered on our journeys.', imageUrl: 'https://picsum.photos/id/103/400/300' },
+    { id: 4, name: 'Snacks & Treats', description: 'Delicious and portable snacks for your adventures.', imageUrl: 'https://picsum.photos/id/104/400/300' },
+    { id: 5, name: 'Beauty & Self Care', description: 'Travel-sized beauty and self-care essentials.', imageUrl: 'https://picsum.photos/id/106/400/300' },
+    { id: 6, name: 'Travel Specials', description: 'On-sale items and special bundles for your next trip.', imageUrl: 'https://picsum.photos/id/108/400/300' },
+    { id: 7, name: 'Hidden Gems', description: 'Lesser-known products that are travel must-haves.', imageUrl: 'https://picsum.photos/id/110/400/300' },
+    { id: 8, name: 'General', description: 'Other miscellaneous travel items.', imageUrl: 'https://picsum.photos/id/111/400/300' },
+];
+
 let products: Product[] = [
-  { id: 1, name: 'Wireless Mouse', category: 'Electronics', price: 25.99, stock: 150, sold: 75 },
-  { id: 2, name: 'Mechanical Keyboard', category: 'Electronics', price: 120.00, stock: 80, sold: 40 },
-  { id: 3, name: 'Desk Chair', category: 'Furniture', price: 199.50, stock: 50, sold: 15 },
-  { id: 4, name: 'LED Monitor', category: 'Electronics', price: 350.00, stock: 100, sold: 60 },
-  { id: 5, name: 'Coffee Mug', category: 'Kitchenware', price: 12.00, stock: 300, sold: 125 },
-  { id: 6, name: 'Laptop Stand', category: 'Accessories', price: 45.00, stock: 200, sold: 90 },
-  { id: 7, name: 'USB-C Hub', category: 'Accessories', price: 59.99, stock: 120, sold: 85 },
-  { id: 8, name: 'Standing Desk', category: 'Furniture', price: 499.00, stock: 30, sold: 10 },
-  { id: 9, name: 'Noise Cancelling Headphones', category: 'Electronics', price: 249.99, stock: 70, sold: 55 },
-  { id: 10, name: 'Ergonomic Footrest', category: 'Accessories', price: 35.50, stock: 150, sold: 30 },
-  { id: 11, name: 'Lipstick', category: 'Cosmetics', price: 22.50, stock: 200, sold: 95 },
-  { id: 12, name: 'Cotton T-Shirt', category: 'Apparel', price: 25.00, stock: 400, sold: 250 },
-  { id: 13, name: 'Hardcover Novel', category: 'Books', price: 18.99, stock: 120, sold: 45 },
-  { id: 14, name: 'Canvas Tote Bag', category: 'General', price: 15.00, stock: 300, sold: 180 },
-  { id: 15, name: 'Blender', category: 'Kitchenware', price: 89.99, stock: 90, sold: 35 },
-  { id: 16, name: 'Mascara', category: 'Cosmetics', price: 14.00, stock: 150, sold: 88 },
+    { id: 1, name: 'Wireless Mouse', categoryId: 2, price: 25.99, stock: 150, sold: 75, imageUrl: 'https://picsum.photos/id/0/200/200', isFeatured: true },
+    { id: 2, name: 'Mechanical Keyboard', categoryId: 2, price: 120.00, stock: 80, sold: 40, imageUrl: 'https://picsum.photos/id/1/200/200', isFeatured: false },
+    { id: 3, name: 'Travel Pillow', categoryId: 3, price: 199.50, stock: 50, sold: 15, isFeatured: true },
+    { id: 4, name: 'Portable Monitor', categoryId: 2, price: 350.00, stock: 100, sold: 60, imageUrl: 'https://picsum.photos/id/2/200/200', isFeatured: false },
+    { id: 5, name: 'Local Artisan Coffee', categoryId: 4, price: 12.00, stock: 300, sold: 125, imageUrl: 'https://picsum.photos/id/3/200/200', isFeatured: true },
+    { id: 6, name: 'Passport Holder', categoryId: 2, price: 45.00, stock: 200, sold: 90, isFeatured: false },
+    { id: 7, name: 'Universal Adapter', categoryId: 2, price: 59.99, stock: 120, sold: 85, imageUrl: 'https://picsum.photos/id/4/200/200', isFeatured: true },
+    { id: 8, name: 'Hand-woven Scarf', categoryId: 3, price: 49.90, stock: 30, sold: 10, isFeatured: false },
+    { id: 9, name: 'Noise Cancelling Headphones', categoryId: 2, price: 249.99, stock: 70, sold: 55, imageUrl: 'https://picsum.photos/id/5/200/200', isFeatured: false },
+    { id: 10, name: 'Travel Journal', categoryId: 7, price: 35.50, stock: 150, sold: 30, isFeatured: false },
+    { id: 11, name: 'Sunscreen SPF 50', categoryId: 5, price: 22.50, stock: 200, sold: 95, imageUrl: 'https://picsum.photos/id/6/200/200', isFeatured: false },
+    { id: 12, name: 'Linen Shirt', categoryId: 6, price: 25.00, stock: 400, sold: 250, isFeatured: false },
+    { id: 13, name: 'City Guide Book', categoryId: 7, price: 18.99, stock: 120, sold: 45, imageUrl: 'https://picsum.photos/id/7/200/200', isFeatured: false },
+    { id: 14, name: 'Reusable Water Bottle', categoryId: 8, price: 15.00, stock: 300, sold: 180, imageUrl: 'https://picsum.photos/id/8/200/200', isFeatured: false },
+    { id: 15, name: 'Gourmet Chocolate Box', categoryId: 4, price: 89.99, stock: 90, sold: 35, isFeatured: false },
+    { id: 16, name: 'Face Mist', categoryId: 5, price: 14.00, stock: 150, sold: 88, imageUrl: 'https://picsum.photos/id/9/200/200', isFeatured: false },
+    { id: 17, name: 'Eiffel Tower Keychain', categoryId: 1, price: 9.99, stock: 500, sold: 250, imageUrl: 'https://picsum.photos/id/10/200/200', isFeatured: false },
 ];
 
 let offers: Offer[] = [
@@ -42,6 +55,17 @@ let orders: Order[] = [
     { id: 'ORD-10003', customerName: 'Lucas Taylor', customerEmail: 'lucas.t@example.com', date: '2023-10-19T15:18:00.000Z', totalAmount: 30.00, status: 'Processing', items: [{ productId: 14, productName: 'Canvas Tote Bag', quantity: 2, price: 15.00}] },
     { id: 'ORD-10002', customerName: 'Mia Thomas', customerEmail: 'mia.t@example.com', date: '2023-10-18T10:25:00.000Z', totalAmount: 179.98, status: 'Shipped', items: [{ productId: 15, productName: 'Blender', quantity: 2, price: 89.99}] },
     { id: 'ORD-10001', customerName: 'Henry Hernandez', customerEmail: 'henry.h@example.com', date: '2023-10-17T19:00:00.000Z', totalAmount: 42.00, status: 'Delivered', items: [{ productId: 16, productName: 'Mascara', quantity: 3, price: 14.00}] },
+];
+
+let banners: BannerImage[] = [
+    { id: 1, imageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920', title: 'Explore the World', subtitle: 'Find the best travel deals and hidden gems.' },
+    { id: 2, imageUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1920', title: 'Unforgettable Journeys', subtitle: 'Souvenirs from every corner of the globe.' },
+];
+
+let websiteContents: WebsiteContent[] = [
+    { key: 'promoHeadline', label: 'Promo Section Headline', value: 'Find Your Next Adventure' },
+    { key: 'promoSubheadline', label: 'Promo Section Sub-headline', value: 'Special offers on travel accessories and souvenirs.' },
+    { key: 'footerAbout', label: 'Footer "About Us" Text', value: 'Your one-stop shop for unique travel finds from around the world. We bring the best souvenirs to your doorstep.' },
 ];
 
 
@@ -119,31 +143,37 @@ export const updateUser = async (id: number, updatedData: Partial<User>): Promis
  */
 export const getProducts = async (params: { page: number, limit: number, search?: string, sortBy?: keyof Product | null, sortOrder?: 'ascending' | 'descending' }): Promise<ProductsApiResponse> => {
   await delay(800);
-  let filteredProducts = [...products];
+  const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+  let enrichedProducts = products.map(p => ({
+      ...p,
+      categoryName: categoryMap.get(p.categoryId) || 'Uncategorized'
+  }));
 
   // 1. Search
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
-    filteredProducts = filteredProducts.filter(p =>
+    enrichedProducts = enrichedProducts.filter(p =>
       p.name.toLowerCase().includes(searchTerm) ||
-      p.category.toLowerCase().includes(searchTerm)
+      p.categoryName?.toLowerCase().includes(searchTerm)
     );
   }
 
   // 2. Sort
   if (params.sortBy && params.sortOrder) {
     const { key, direction } = { key: params.sortBy, direction: params.sortOrder };
-    filteredProducts.sort((a, b) => {
-      if (a[key] < b[key]) return direction === 'ascending' ? -1 : 1;
-      if (a[key] > b[key]) return direction === 'ascending' ? 1 : -1;
+    enrichedProducts.sort((a, b) => {
+      const valA = a[key as keyof typeof a];
+      const valB = b[key as keyof typeof b];
+      if (valA! < valB!) return direction === 'ascending' ? -1 : 1;
+      if (valA! > valB!) return direction === 'ascending' ? 1 : -1;
       return 0;
     });
   }
 
   // 3. Paginate
-  const totalCount = filteredProducts.length;
+  const totalCount = enrichedProducts.length;
   const startIndex = (params.page - 1) * params.limit;
-  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + params.limit);
+  const paginatedProducts = enrichedProducts.slice(startIndex, startIndex + params.limit);
   
   return { products: paginatedProducts, totalCount };
 };
@@ -157,7 +187,11 @@ export const getProducts = async (params: { page: number, limit: number, search?
  */
 export const addProduct = async (productData: Omit<Product, 'id'>): Promise<Product> => {
     await delay(500);
-    const newProduct: Product = { id: Date.now(), ...productData };
+    const newProduct: Product = { 
+        id: Date.now(), 
+        ...productData,
+        isFeatured: productData.isFeatured || false
+    };
     products = [newProduct, ...products]; // Add to the top
     return newProduct;
 };
@@ -180,6 +214,22 @@ export const updateProduct = async (id: number, updatedData: Product): Promise<P
 };
 
 /**
+ * Endpoint: PATCH /api/products/:id/featured
+ * Toggles the featured status of a product.
+ * @param {number} id - The ID of the product to update.
+ * @returns {Promise<Product>} - The updated product.
+ */
+export const toggleProductFeaturedStatus = async (id: number): Promise<Product> => {
+    await delay(400);
+    let productToUpdate = products.find(p => p.id === id);
+    if (!productToUpdate) {
+        throw new Error("Product not found");
+    }
+    productToUpdate.isFeatured = !productToUpdate.isFeatured;
+    return productToUpdate;
+};
+
+/**
  * Endpoint: DELETE /api/products/:id
  * Deletes a product.
  * @param {number} id - The ID of the product to delete.
@@ -194,6 +244,69 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean }> =
     }
     return { success: true };
 };
+
+// --- API REFERENCE: CATEGORIES ---
+
+/**
+ * Endpoint: GET /api/categories
+ * Fetches all product categories.
+ * @returns {Promise<Category[]>}
+ */
+export const getCategories = async (): Promise<Category[]> => {
+    await delay(500);
+    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+/**
+ * Endpoint: POST /api/categories
+ * Adds a new category.
+ * @param {Omit<Category, 'id'>} categoryData
+ * @returns {Promise<Category>}
+ */
+export const addCategory = async (categoryData: Omit<Category, 'id'>): Promise<Category> => {
+    await delay(500);
+    const newCategory: Category = { id: Date.now(), ...categoryData };
+    categories = [newCategory, ...categories];
+    return newCategory;
+};
+
+/**
+ * Endpoint: PUT /api/categories/:id
+ * Updates an existing category.
+ * @param {number} id
+ * @param {Partial<Omit<Category, 'id'>>} updatedData
+ * @returns {Promise<Category>}
+ */
+export const updateCategory = async (id: number, updatedData: Partial<Omit<Category, 'id'>>): Promise<Category> => {
+    await delay(500);
+    let categoryToUpdate = categories.find(c => c.id === id);
+    if (!categoryToUpdate) {
+        throw new Error("Category not found");
+    }
+    Object.assign(categoryToUpdate, updatedData);
+    return categoryToUpdate;
+};
+
+/**
+ * Endpoint: DELETE /api/categories/:id
+ * Deletes a category.
+ * @param {number} id
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const deleteCategory = async (id: number): Promise<{ success: boolean }> => {
+    await delay(500);
+    const initialLength = categories.length;
+    // Check if any product is using this category
+    if (products.some(p => p.categoryId === id)) {
+        throw new Error("Cannot delete category as it is currently in use by products.");
+    }
+    categories = categories.filter(c => c.id !== id);
+    if (categories.length === initialLength) {
+        throw new Error("Category not found");
+    }
+    return { success: true };
+};
+
 
 // --- API REFERENCE: OFFERS ---
 
@@ -314,6 +427,70 @@ export const updateOrderStatus = async (id: string, status: OrderStatus): Promis
 };
 
 
+// --- API REFERENCE: WEBSITE CONTENT ---
+
+/**
+ * Endpoint: GET /api/website/banners
+ * Fetches all promotional banners.
+ * @returns {Promise<BannerImage[]>}
+ */
+export const getBanners = async (): Promise<BannerImage[]> => {
+    await delay(600);
+    return [...banners].sort((a, b) => b.id - a.id);
+};
+
+/**
+ * Endpoint: POST /api/website/banners
+ * Adds a new banner.
+ * @param {Omit<BannerImage, 'id'>} bannerData
+ * @returns {Promise<BannerImage>}
+ */
+export const addBanner = async (bannerData: Omit<BannerImage, 'id'>): Promise<BannerImage> => {
+    await delay(500);
+    const newBanner: BannerImage = { id: Date.now(), ...bannerData };
+    banners = [newBanner, ...banners];
+    return newBanner;
+};
+
+/**
+ * Endpoint: DELETE /api/website/banners/:id
+ * Deletes a banner.
+ * @param {number} id
+ * @returns {Promise<{ success: boolean }>}
+ */
+export const deleteBanner = async (id: number): Promise<{ success: boolean }> => {
+    await delay(500);
+    const initialLength = banners.length;
+    banners = banners.filter(b => b.id !== id);
+    if (banners.length === initialLength) {
+        throw new Error("Banner not found");
+    }
+    return { success: true };
+};
+
+/**
+ * Endpoint: GET /api/website/content
+ * Fetches all key-value website text content.
+ * @returns {Promise<WebsiteContent[]>}
+ */
+export const getWebsiteContents = async (): Promise<WebsiteContent[]> => {
+    await delay(600);
+    return JSON.parse(JSON.stringify(websiteContents));
+};
+
+/**
+ * Endpoint: POST /api/website/content
+ * Updates all website content fields.
+ * @param {WebsiteContent[]} newContents
+ * @returns {Promise<WebsiteContent[]>}
+ */
+export const updateWebsiteContents = async (newContents: WebsiteContent[]): Promise<WebsiteContent[]> => {
+    await delay(700);
+    websiteContents = JSON.parse(JSON.stringify(newContents));
+    return websiteContents;
+};
+
+
 // --- API REFERENCE: DASHBOARD & CHARTS ---
 
 /**
@@ -372,10 +549,12 @@ export const getMostSalesData = async (period: 'Last 7 Days' | 'Last Month' | 'L
  */
 export const getProductCategoryDistribution = async () => {
     await delay(900);
+    const categoryNameMap = new Map(categories.map(cat => [cat.id, cat.name]));
     const distribution = products.reduce((acc, product) => {
-        acc[product.category] = (acc[product.category] || 0) + 1;
+        const categoryName = categoryNameMap.get(product.categoryId) || 'Uncategorized';
+        acc[categoryName] = (acc[categoryName] || 0) + 1;
         return acc;
-    }, {} as Record<ProductCategory, number>);
+    }, {} as Record<string, number>);
 
     return Object.entries(distribution).map(([name, value]) => ({ name, value }));
 };
