@@ -1,21 +1,61 @@
+export interface Address {
+  name: string;
+  email?: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface OrderItem {
+  productId: string;
+  productName?: string; 
+  quantity: number;
+  price: number;
+}
+
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+
+
+export interface Order {
+  _id: string;
+  items: OrderItem[];
+  totalAmount: number;
+  paymentMethod: 'card' | 'paypal' | 'cod' | 'razorpay';
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  status: OrderStatus;
+  shippingAddress: Address;
+  date: string; // maps from placedAt
+  customerName: string; // derived from shippingAddress
+  customerEmail: string; // derived from shippingAddress
+}
+
+
+export interface OrdersApiResponse {
+  orders: Order[];
+  totalCount: number;
+}
+
 export interface Category {
-  id: number;
+  _id: string;
   name: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string; // maps from 'image'
   productCount?: number;
 }
 
 export interface Product {
-  id: number;
+  _id: string;
   name: string;
-  imageUrls?: string[];
-  categoryId: number;
-  categoryName?: string; // For display purposes, joined in API
+  images?: string[]; // maps from 'images'
+  imageUrls?: string[]; // for compatibility with components expecting this
+  categoryId: string;
+  categoryName?: string; // For display purposes, joined in API or mapped on client
   price: number;
   stock: number;
-  sold: number;
-  isFeatured: boolean;
+  sold: number; // This field is not in the new schema, but components use it. Assuming it can be derived or will be added. Let's keep it for now and handle its absence.
+  isFeatured: boolean; // Also not in schema.
 }
 
 export interface ProductsApiResponse {
@@ -28,48 +68,29 @@ export type SortConfig<T> = {
   direction: 'ascending' | 'descending';
 }
 
-export type Page = 'dashboard' | 'products' | 'categories' | 'orders' | 'offers' | 'reports' | 'settings' | 'websiteContent';
+export type Page = 'dashboard' | 'products' | 'categories' | 'orders' | 'reports' | 'offers' | 'websiteContent' | 'settings';
 
 export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'Admin' | 'Editor';
+  name: any;
+  token: 'Admin' | 'Editor';
 }
 
+export type DashboardStats = {
+    totalSales: { value: number };
+    totalOrders: { value: number };
+    totalProducts: { value: number };
+    totalCategories: { value: number };
+};
+
 export interface Offer {
-  id: number;
+  id: string;
   title: string;
   description: string;
   promoCode: string;
 }
 
-export type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-
-export interface OrderItem {
-  productId: number;
-  productName: string;
-  quantity: number;
-  price: number;
-}
-
-export interface Order {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  date: string; // ISO string format
-  totalAmount: number;
-  status: OrderStatus;
-  items: OrderItem[];
-}
-
-export interface OrdersApiResponse {
-  orders: Order[];
-  totalCount: number;
-}
-
 export interface BannerImage {
-  id: number;
+  id: string;
   imageUrl: string;
   title: string;
   subtitle: string;
@@ -80,7 +101,6 @@ export interface WebsiteContent {
   label: string;
   value: string;
 }
-
 
 export interface AppContextType {
   activePage: Page;
@@ -95,5 +115,4 @@ export interface AppContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUserProfile: (updatedProfile: Partial<Pick<User, 'name' | 'email'>>) => Promise<void>;
 }

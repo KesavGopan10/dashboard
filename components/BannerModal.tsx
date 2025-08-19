@@ -2,15 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BannerImage } from '../types';
 import { XIcon } from './icons';
 
+type BannerFormData = Omit<BannerImage, 'id'>;
+type BannerFormKeys = keyof BannerFormData;
+
+type FormErrors = {
+  [key in BannerFormKeys]?: string;
+};
+
 interface BannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (banner: Omit<BannerImage, 'id'>) => Promise<void>;
 }
-
-type FormErrors = {
-  [key in keyof Omit<BannerImage, 'id'>]?: string;
-};
 
 const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
     useEffect(() => {
@@ -49,7 +52,7 @@ const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
 
 
 const BannerModal: React.FC<BannerModalProps> = ({ isOpen, onClose, onSave }) => {
-  const initialState = { imageUrl: '', title: '', subtitle: '' };
+  const initialState: BannerFormData = { imageUrl: '', title: '', subtitle: '' };
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +72,7 @@ const BannerModal: React.FC<BannerModalProps> = ({ isOpen, onClose, onSave }) =>
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name as BannerFormKeys]: value }));
     if (errors[name as keyof FormErrors]) {
         setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -97,9 +100,10 @@ const BannerModal: React.FC<BannerModalProps> = ({ isOpen, onClose, onSave }) =>
     
     setIsSubmitting(true);
     await onSave(formData);
+    // Set submitting to false in parent on success/fail
   };
 
-  const InputField: React.FC<{name: keyof FormErrors, label: string}> = ({name, label}) => (
+  const InputField: React.FC<{name: BannerFormKeys, label: string}> = ({name, label}) => (
     <div>
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input id={name} type="text" name={name} value={formData[name]} onChange={handleChange} placeholder={`Enter ${label.toLowerCase()}`} className={`w-full p-3 border rounded-lg focus:ring-2 ${errors[name] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`} aria-invalid={!!errors[name]} />

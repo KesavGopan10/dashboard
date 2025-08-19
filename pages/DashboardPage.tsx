@@ -1,23 +1,23 @@
 
+
 import React, { useState, useEffect } from 'react';
 import StatCard from '../components/StatCard';
 import SalesReportChart from '../components/SalesReportChart';
 import MostSalesChart from '../components/MostSalesChart';
-import { ChartIcon, CreditCardIcon, ShoppingBagIcon, WalletIcon } from '../components/icons';
+import { ChartIcon, CreditCardIcon, ShoppingBagIcon, WalletIcon, Squares2X2Icon, OrderIcon } from '../components/icons';
 import { getDashboardStats } from '../api/mockApi';
+import { DashboardStats } from '../types';
 
 type StatData = {
   title: string;
   value: string;
-  change: string;
-  changeType: 'increase' | 'decrease';
 };
 
 const iconMap: { [key: string]: React.ReactNode } = {
   "Total Sales": <ShoppingBagIcon className="w-8 h-8 text-[#A4F44A]" />,
-  "Purchases": <WalletIcon className="w-8 h-8 text-[#A4F44A]" />,
-  "Paid": <CreditCardIcon className="w-8 h-8 text-[#A4F44A]" />,
-  "Profits": <ChartIcon className="w-8 h-8 text-[#A4F44A]" />,
+  "Total Orders": <OrderIcon className="w-8 h-8 text-[#A4F44A]" />,
+  "Total Products": <WalletIcon className="w-8 h-8 text-[#A4F44A]" />,
+  "Total Categories": <Squares2X2Icon className="w-8 h-8 text-[#A4F44A]" />,
 };
 
 const DashboardPage: React.FC = () => {
@@ -29,7 +29,13 @@ const DashboardPage: React.FC = () => {
       try {
         setIsLoading(true);
         const data = await getDashboardStats();
-        setStats(data);
+        const formattedStats: StatData[] = [
+            { title: "Total Sales", value: `$${(data.totalSales.value || 0).toLocaleString()}`},
+            { title: "Total Orders", value: (data.totalOrders.value || 0).toLocaleString() },
+            { title: "Total Products", value: (data.totalProducts.value || 0).toLocaleString() },
+            { title: "Total Categories", value: (data.totalCategories.value || 0).toLocaleString() },
+        ];
+        setStats(formattedStats);
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error);
       } finally {
@@ -47,7 +53,7 @@ const DashboardPage: React.FC = () => {
           Array.from({ length: 4 }).map((_, index) => (
             <StatCard 
               key={index}
-              title="" value="" change="" changeType="increase" icon={<></>}
+              title="" value="" icon={<></>}
               isLoading={true} 
             />
           ))
@@ -57,8 +63,6 @@ const DashboardPage: React.FC = () => {
               key={stat.title}
               title={stat.title} 
               value={stat.value} 
-              change={stat.change} 
-              changeType={stat.changeType}
               icon={iconMap[stat.title] || <ChartIcon className="w-8 h-8 text-[#A4F44A]" />}
               isLoading={false}
             />

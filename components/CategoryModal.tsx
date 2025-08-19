@@ -5,12 +5,12 @@ import { XIcon } from './icons';
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (category: Omit<Category, 'id'> | Category) => Promise<void>;
+  onSave: (category: Omit<Category, '_id'> | Category) => Promise<void>;
   category: Category | null;
 }
 
 type FormErrors = {
-  [key in keyof Omit<Category, 'id'>]?: string;
+  [key in keyof Omit<Category, '_id' | 'productCount'>]?: string;
 };
 
 const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
@@ -48,7 +48,7 @@ const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
 const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, category }) => {
   const initialState = { name: '', description: '', imageUrl: '' };
   
-  const getInitialState = () => category ? { ...category } : initialState;
+  const getInitialState = () => category ? { name: category.name, description: category.description, imageUrl: category.imageUrl } : initialState;
 
   const [formData, setFormData] = useState(getInitialState());
   const [errors, setErrors] = useState<FormErrors>({});
@@ -95,7 +95,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, 
     
     setIsSubmitting(true);
     const categoryToSave = {
-      ...(category ? { id: category.id } : {}),
+      ...(category ? { _id: category._id } : {}),
       name: formData.name,
       description: formData.description,
       imageUrl: formData.imageUrl,

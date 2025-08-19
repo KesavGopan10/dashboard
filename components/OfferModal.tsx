@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Offer } from '../types';
 import { XIcon } from './icons';
 
+type OfferFormData = Omit<Offer, 'id'>;
+type OfferFormKeys = keyof OfferFormData;
+
+type FormErrors = {
+  [key in OfferFormKeys]?: string;
+};
+
 const useFocusTrap = (ref: React.RefObject<HTMLElement>, isOpen: boolean) => {
     useEffect(() => {
         if (!isOpen || !ref.current) return;
@@ -44,14 +51,10 @@ interface OfferModalProps {
   offer: Offer | null;
 }
 
-type FormErrors = {
-  [key in keyof Omit<Offer, 'id'>]?: string;
-};
-
 const OfferModal: React.FC<OfferModalProps> = ({ isOpen, onClose, onSave, offer }) => {
-  const newOfferInitialState = { title: '', description: '', promoCode: '' };
+  const newOfferInitialState: OfferFormData = { title: '', description: '', promoCode: '' };
   
-  const getInitialState = () => offer 
+  const getInitialState = (): OfferFormData => offer 
     ? { title: offer.title, description: offer.description, promoCode: offer.promoCode }
     : newOfferInitialState;
 
@@ -75,7 +78,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ isOpen, onClose, onSave, offer 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name as OfferFormKeys]: value }));
     if (errors[name as keyof FormErrors]) {
         setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -111,7 +114,7 @@ const OfferModal: React.FC<OfferModalProps> = ({ isOpen, onClose, onSave, offer 
     }
   };
 
-  const InputField: React.FC<{name: keyof FormErrors, label: string, type?: string, required?: boolean}> = ({name, label, type='text'}) => (
+  const InputField: React.FC<{name: OfferFormKeys, label: string, type?: string, required?: boolean}> = ({name, label, type='text'}) => (
     <div>
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input id={name} type={type} name={name} value={formData[name]} onChange={handleChange} placeholder={`Enter ${label.toLowerCase()}`} className={`w-full p-3 border rounded-lg focus:ring-2 ${errors[name] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`} aria-invalid={!!errors[name]} />

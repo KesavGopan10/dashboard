@@ -15,7 +15,6 @@ const CategoryTable: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-    const [deleteProducts, setDeleteProducts] = useState(false);
 
     const { showToast } = useContext(AppContext);
 
@@ -25,8 +24,8 @@ const CategoryTable: React.FC = () => {
         try {
             const data = await getCategories();
             setCategories(data);
-        } catch (err) {
-            setError("Failed to fetch categories.");
+        } catch (err: any) {
+            setError(err.message || "Failed to fetch categories.");
             showToast("Failed to fetch categories");
         } finally {
             setIsLoading(false);
@@ -49,7 +48,6 @@ const CategoryTable: React.FC = () => {
 
     const handleDeleteClick = (category: Category) => {
         setCategoryToDelete(category);
-        setDeleteProducts(false);
     };
 
     const handleCloseModal = () => {
@@ -57,13 +55,13 @@ const CategoryTable: React.FC = () => {
         setEditingCategory(null);
     };
 
-    const handleSave = async (categoryData: Omit<Category, 'id'> | Category) => {
+    const handleSave = async (categoryData: Omit<Category, '_id'> | Category) => {
         try {
-            if ('id' in categoryData && categoryData.id) {
-                await updateCategory(categoryData.id, categoryData);
+            if ('_id' in categoryData && categoryData._id) {
+                await updateCategory(categoryData._id, categoryData);
                 showToast("Category updated successfully.");
             } else {
-                await addCategory(categoryData as Omit<Category, 'id'>);
+                await addCategory(categoryData as Omit<Category, '_id'>);
                 showToast("Category added successfully.");
             }
             handleCloseModal();
@@ -78,7 +76,7 @@ const CategoryTable: React.FC = () => {
         if (!categoryToDelete) return;
 
         try {
-            await deleteCategory(categoryToDelete.id, { deleteProducts });
+            await deleteCategory(categoryToDelete._id);
             showToast("Category deleted successfully.");
             fetchCategories();
         } catch (error: any) {
@@ -104,11 +102,13 @@ const CategoryTable: React.FC = () => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categories.map(category => (
-                    <div key={category.id} className="bg-white rounded-xl shadow-md overflow-hidden group flex flex-col">
+                    <div key={category._id} className="bg-white rounded-xl shadow-md overflow-hidden group flex flex-col">
                         <img src={category.imageUrl} alt={category.name} className="w-full h-40 object-cover"/>
                         <div className="p-5 flex-grow flex flex-col">
                             <h4 className="text-lg font-bold text-gray-800">{category.name}</h4>
-                            <p className="text-sm font-medium text-gray-500 mt-1">{category.productCount} Product{category.productCount !== 1 ? 's' : ''}</p>
+                             {typeof category.productCount !== 'undefined' && (
+                                <p className="text-sm font-medium text-gray-500 mt-1">{category.productCount} Product{category.productCount !== 1 ? 's' : ''}</p>
+                             )}
                             <p className="text-sm text-gray-600 mt-2 flex-grow">{category.description}</p>
                             <div className="flex justify-end space-x-2 mt-4">
                                 <button onClick={() => handleEditClick(category)} className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors" aria-label={`Edit ${category.name}`}>
@@ -150,25 +150,9 @@ const CategoryTable: React.FC = () => {
                 onClose={() => setCategoryToDelete(null)}
                 onConfirm={handleDelete}
                 title="Delete Category"
-                message={
-                    deleteProducts
-                      ? `Are you sure you want to delete "${categoryToDelete?.name}" and all of its ${categoryToDelete?.productCount} associated products? This action cannot be undone.`
-                      : `Are you sure you want to delete "${categoryToDelete?.name}"? Its products will be moved to the 'General' category.`
-                }
+                message={`Are you sure you want to delete "${categoryToDelete?.name}"? This action may affect associated products and cannot be undone.`}
                 variant="destructive"
-            >
-              {categoryToDelete?.productCount > 0 && (
-                <label className="flex items-center space-x-3 cursor-pointer p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <input 
-                        type="checkbox"
-                        checked={deleteProducts}
-                        onChange={(e) => setDeleteProducts(e.target.checked)}
-                        className="h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
-                    />
-                    <span className="text-sm text-red-800 font-medium">Delete all {categoryToDelete?.productCount} products in this category</span>
-                </label>
-              )}
-            </ConfirmationModal>
+            />
         </>
     );
 };

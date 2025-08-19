@@ -9,14 +9,14 @@ import { useDebounce } from '../hooks/useDebounce';
 import { ChevronDownIcon } from './icons';
 
 const ORDERS_PER_PAGE = 8;
-const ALL_STATUSES: OrderStatus[] = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+const ALL_STATUSES: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
-const statusBadgeStyles: Record<OrderStatus, string> = {
-  Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 focus:ring-yellow-500',
-  Processing: 'bg-blue-100 text-blue-800 border-blue-200 focus:ring-blue-500',
-  Shipped: 'bg-indigo-100 text-indigo-800 border-indigo-200 focus:ring-indigo-500',
-  Delivered: 'bg-green-100 text-green-800 border-green-200 focus:ring-green-500',
-  Cancelled: 'bg-red-100 text-red-800 border-red-200 focus:ring-red-500',
+const statusBadgeStyles: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 focus:ring-yellow-500',
+  processing: 'bg-blue-100 text-blue-800 border-blue-200 focus:ring-blue-500',
+  shipped: 'bg-indigo-100 text-indigo-800 border-indigo-200 focus:ring-indigo-500',
+  delivered: 'bg-green-100 text-green-800 border-green-200 focus:ring-green-500',
+  cancelled: 'bg-red-100 text-red-800 border-red-200 focus:ring-red-500',
 };
 
 
@@ -78,11 +78,9 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     try {
       await updateOrderStatus(orderId, newStatus);
       showToast(`Order #${orderId.substring(0,6)} status updated.`);
-      // Optimistically update the UI before refetching
-      setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: newStatus} : o));
+      setOrders(prev => prev.map(o => o._id === orderId ? {...o, status: newStatus} : o));
     } catch (err) {
       showToast('Failed to update order status.');
-      // Refetch on error to revert optimistic update
       fetchAndSetOrders(currentPage);
     } finally {
       setUpdatingStatus(null);
@@ -113,17 +111,17 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
       return <tr><td colSpan={6} className="text-center py-16 text-gray-500">No orders found.</td></tr>;
     }
     return orders.map((order) => (
-      <React.Fragment key={order.id}>
+      <React.Fragment key={order._id}>
         <tr className="bg-white border-b hover:bg-gray-50">
           <td data-label="Order ID" className="px-6 py-4">
-             <button onClick={() => handleToggleExpand(order.id)} className="flex items-center text-[#2D7A79] hover:underline font-mono text-sm group">
-                  #{order.id.substring(4)}
-                  <ChevronDownIcon className={`w-4 h-4 ml-2 transition-transform transform group-hover:text-gray-700 ${expandedOrderId === order.id ? 'rotate-180' : ''}`} />
+             <button onClick={() => handleToggleExpand(order._id)} className="flex items-center text-[#2D7A79] hover:underline font-mono text-sm group">
+                  #{order._id.slice(-6).toUpperCase()}
+                  <ChevronDownIcon className={`w-4 h-4 ml-2 transition-transform transform group-hover:text-gray-700 ${expandedOrderId === order._id ? 'rotate-180' : ''}`} />
               </button>
           </td>
           <td data-label="Customer" className="px-6 py-4">
-              <div className="font-medium text-gray-900">{order.customerName}</div>
-              <div className="text-xs text-gray-500">{order.customerEmail}</div>
+              <div className="font-medium text-gray-900">{order.shippingAddress.name}</div>
+              <div className="text-xs text-gray-500">{order.shippingAddress.email}</div>
           </td>
           <td data-label="Date" className="px-6 py-4">{new Date(order.date).toLocaleDateString()}</td>
           <td data-label="Total" className="px-6 py-4 font-medium">${order.totalAmount.toFixed(2)}</td>
@@ -131,20 +129,20 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
               <div className="flex items-center">
                 <select 
                   value={order.status}
-                  onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                  disabled={updatingStatus === order.id}
-                  className={`w-32 p-1.5 border rounded-lg text-xs font-medium focus:ring-2 focus:outline-none transition-colors ${statusBadgeStyles[order.status]}`}
+                  onChange={(e) => handleStatusChange(order._id, e.target.value as OrderStatus)}
+                  disabled={updatingStatus === order._id}
+                  className={`w-32 p-1.5 border rounded-lg text-xs font-medium focus:ring-2 focus:outline-none transition-colors capitalize ${statusBadgeStyles[order.status.toLowerCase()]}`}
                 >
                   {ALL_STATUSES.map(status => (
-                    <option key={status} value={status}>{status}</option>
+                    <option key={status} value={status} className="capitalize">{status}</option>
                   ))}
                 </select>
-                {updatingStatus === order.id && <div className="ml-2 w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>}
+                {updatingStatus === order._id && <div className="ml-2 w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>}
               </div>
           </td>
           <td data-label="Items" className="px-6 py-4 text-center">{order.items.reduce((acc, item) => acc + item.quantity, 0)}</td>
         </tr>
-        {expandedOrderId === order.id && (
+        {expandedOrderId === order._id && (
            <tr className="responsive-table-details bg-gray-50 md:bg-gray-50/50">
                 <td colSpan={6} className="p-0" data-label="">
                   <div className="p-4">
@@ -153,8 +151,7 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
                       {order.items.map(item => (
                         <li key={item.productId} className="flex flex-col sm:flex-row justify-between sm:items-center text-sm p-3 rounded-md bg-white border border-gray-200 shadow-sm">
                           <div>
-                            <span className="font-semibold text-gray-800">{item.productName}</span>
-                            <span className="text-gray-500 ml-2 text-xs">(ID: {item.productId})</span>
+                            <span className="font-semibold text-gray-800">{item.productName || `Product ID: ${item.productId}`}</span>
                           </div>
                           <div className="text-left sm:text-right mt-2 sm:mt-0">
                             <div className="text-gray-600">Qty: {item.quantity}</div>
@@ -181,7 +178,7 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <SortableTableHeader<Order> label="Order ID" sortKey="id" sortConfig={sortConfig} onSort={handleSort} />
+              <SortableTableHeader<Order> label="Order ID" sortKey="_id" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Order> label="Customer" sortKey="customerName" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Order> label="Date" sortKey="date" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Order> label="Total" sortKey="totalAmount" sortConfig={sortConfig} onSort={handleSort} />

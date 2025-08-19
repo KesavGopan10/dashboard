@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
-import { Product, SortConfig } from '../types';
-import { EditIcon, DeleteIcon, ProductsIcon, StarIcon } from './icons';
-import { getProducts, addProduct, updateProduct, deleteProduct, toggleProductFeaturedStatus } from '../api/mockApi';
+import { Product, SortConfig, Category } from '../types';
+import { EditIcon, DeleteIcon, ProductsIcon } from './icons';
+import { getProducts, addProduct, updateProduct, deleteProduct, getCategories } from '../api/mockApi';
 import { AppContext } from '../contexts/AppContext';
 import ConfirmationModal from './ConfirmationModal';
 import ProductModal from './ProductModal';
@@ -14,6 +14,7 @@ const PRODUCTS_PER_PAGE = 5;
 
 const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -23,7 +24,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   
   const [totalProducts, setTotalProducts] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortConfig, setSortConfig] = useState<SortConfig<Product>>({ key: 'id', direction: 'descending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig<Product>>({ key: '_id', direction: 'descending' });
 
   const { showToast } = useContext(AppContext);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -45,15 +46,27 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getProducts({
-        page: pageToFetch,
-        limit: PRODUCTS_PER_PAGE,
-        search: debouncedSearchQuery,
-        sortBy: sortConfig.key,
-        sortOrder: sortConfig.direction,
-      });
-      setProducts(data.products);
-      setTotalProducts(data.totalCount);
+      const [productsData, categoriesData] = await Promise.all([
+        getProducts({
+          page: pageToFetch,
+          limit: PRODUCTS_PER_PAGE,
+          search: debouncedSearchQuery,
+          sortBy: sortConfig.key,
+          sortOrder: sortConfig.direction,
+        }),
+        getCategories() // Fetch all categories to map names
+      ]);
+
+      setCategories(categoriesData);
+      const categoryMap = new Map(categoriesData.map(c => [c._id, c.name]));
+      
+      const productsWithCategoryNames = productsData.products.map(p => ({
+        ...p,
+        categoryName: categoryMap.get(p.categoryId) || 'Uncategorized'
+      }));
+
+      setProducts(productsWithCategoryNames);
+      setTotalProducts(productsData.totalCount);
     } catch (err) {
       setError("Failed to fetch products. Please try again later.");
       showToast("Failed to fetch products");
@@ -81,7 +94,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
     if (!productToDelete) return;
 
     try {
-        await deleteProduct(productToDelete.id);
+        await deleteProduct(productToDelete._id);
         showToast("Product deleted successfully.");
         if (products.length === 1 && currentPage > 1) {
             setCurrentPage(currentPage - 1);
@@ -94,26 +107,11 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         setProductToDelete(null); 
     }
   };
-  
-  const handleToggleFeatured = async (productId: number) => {
-    // Optimistic UI update
-    setProducts(prevProducts => prevProducts.map(p => p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p));
-    try {
-      await toggleProductFeaturedStatus(productId);
-      showToast('Featured status updated.');
-      // Optional: refetch to ensure consistency, though optimistic update is usually enough
-      // fetchAndSetProducts(); 
-    } catch (error) {
-      showToast('Failed to update featured status.');
-      // Revert UI on error
-      setProducts(prevProducts => prevProducts.map(p => p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p));
-    }
-  }
 
-  const handleSave = async (productData: Omit<Product, 'id'> | Product) => {
+  const handleSave = async (productData: Omit<Product, '_id'> | Product) => {
     try {
-        if ('id' in productData && productData.id) {
-            await updateProduct(productData.id, productData as Product);
+        if ('_id' in productData && productData._id) {
+            await updateProduct(productData._id, productData as Product);
             showToast("Product updated successfully.");
         } else {
             await addProduct(productData);
@@ -143,21 +141,16 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
 
   const renderTableContent = () => {
     if (isLoading) {
-      return <tr><td colSpan={8} className="text-center py-16"><LoadingSpinner /></td></tr>;
+      return <tr><td colSpan={7} className="text-center py-16"><LoadingSpinner /></td></tr>;
     }
     if (error) {
-      return <tr><td colSpan={8} className="text-center py-16 text-red-500">{error}</td></tr>;
+      return <tr><td colSpan={7} className="text-center py-16 text-red-500">{error}</td></tr>;
     }
     if (products.length === 0) {
-      return <tr><td colSpan={8} className="text-center py-16 text-gray-500">No products found.</td></tr>;
+      return <tr><td colSpan={7} className="text-center py-16 text-gray-500">No products found.</td></tr>;
     }
     return products.map((product) => (
-      <tr key={product.id} className="bg-white border-b hover:bg-gray-50">
-         <td data-label="Featured" className="px-6 py-4">
-          <button onClick={() => handleToggleFeatured(product.id)} className={`p-2 rounded-full transition-colors ${product.isFeatured ? 'text-yellow-400 hover:text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`} aria-label={`Mark ${product.name} as featured`}>
-            <StarIcon className="w-6 h-6" />
-          </button>
-        </td>
+      <tr key={product._id} className="bg-white border-b hover:bg-gray-50">
         <td data-label="Image" className="px-6 py-4">
           {product.imageUrls && product.imageUrls.length > 0 ? (
             <img src={product.imageUrls[0]} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
@@ -171,7 +164,6 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         <td data-label="Category" className="px-6 py-4">{product.categoryName}</td>
         <td data-label="Price" className="px-6 py-4">${product.price.toFixed(2)}</td>
         <td data-label="Stock" className="px-6 py-4">{product.stock}</td>
-        <td data-label="Sold" className="px-6 py-4">{product.sold}</td>
         <td data-label="Actions" className="px-6 py-4 text-right space-x-2">
           <button onClick={() => handleEditClick(product)} className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-100 transition-colors" aria-label={`Edit ${product.name}`}>
             <EditIcon className="w-5 h-5" />
@@ -197,13 +189,11 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3">Featured</th>
               <th scope="col" className="px-6 py-3">Image</th>
               <SortableTableHeader<Product> label="Product Name" sortKey="name" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Category" sortKey="categoryName" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Price" sortKey="price" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Stock" sortKey="stock" sortConfig={sortConfig} onSort={handleSort} />
-              <SortableTableHeader<Product> label="Sold" sortKey="sold" sortConfig={sortConfig} onSort={handleSort} />
               <th scope="col" className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -227,6 +217,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
         onClose={handleCloseModal}
         onSave={handleSave}
         product={editingProduct}
+        categories={categories}
       />
       <ConfirmationModal
         isOpen={!!productToDelete}

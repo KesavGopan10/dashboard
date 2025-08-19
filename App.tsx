@@ -5,10 +5,10 @@ import DashboardPage from './pages/DashboardPage';
 import ProductsPage from './pages/ProductsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import OrdersPage from './pages/OrdersPage';
-import OffersPage from './pages/OffersPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
+import OffersPage from './pages/OffersPage';
 import WebsiteContentPage from './pages/WebsiteContentPage';
 import { AppContext } from './contexts/AppContext';
 import Toast from './components/Toast';
@@ -35,17 +35,17 @@ const App: React.FC = () => {
       title: 'Customer Orders',
       description: 'Track, manage, and fulfill customer orders.',
     },
-    offers: {
-      title: 'Exclusive Offers',
-      description: 'Check out the latest deals and generate new ones for your customers.',
-    },
     reports: {
       title: 'Reports',
       description: 'View detailed analytics and reports on your sales and products.',
     },
+    offers: {
+      title: 'Offers & Promotions',
+      description: 'Create and manage promotional offers for your store.',
+    },
     websiteContent: {
       title: 'Website Content',
-      description: "Manage your public website's banners and text content.",
+      description: 'Manage banners and text content on your public website.',
     },
     settings: {
       title: 'Settings',
@@ -65,10 +65,10 @@ const App: React.FC = () => {
         return <CategoriesPage />;
       case 'orders':
         return <OrdersPage />;
-      case 'offers':
-        return <OffersPage />;
       case 'reports':
         return <ReportsPage />;
+      case 'offers':
+        return <OffersPage />;
       case 'websiteContent':
         return <WebsiteContentPage />;
       case 'settings':

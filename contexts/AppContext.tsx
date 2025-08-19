@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { AppContextType, Page, User } from '../types';
-import { login as apiLogin, getMe, updateUser as apiUpdateUser } from '../api/mockApi';
+import { login as apiLogin } from '../api/mockApi';
 
 export const AppContext = createContext<AppContextType>(null!);
 
@@ -11,7 +11,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('authToken'));
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Clear search when navigating away from products page
@@ -33,44 +33,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('authUser');
     _setActivePage('dashboard');
     showToast("You have been successfully logged out.");
   }, []);
 
   useEffect(() => {
-    const validateToken = async () => {
-      if (token) {
-        try {
-          const currentUser = await getMe(token);
-          setUser(currentUser);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error("Session expired or token is invalid.", error);
-          logout();
-        }
+    try {
+      const storedToken = sessionStorage.getItem('authToken');
+      const storedUserRaw = sessionStorage.getItem('authUser');
+      // Avoid parsing the literal string "undefined" which would throw a SyntaxError
+      if (storedToken && storedUserRaw && storedUserRaw !== 'undefined') {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUserRaw));
+        setIsAuthenticated(true);
       }
-      setIsLoading(false);
-    };
-    validateToken();
-  }, [token, logout]);
+    } catch (error) {
+      console.error("Failed to parse user data from sessionStorage", error);
+      logout();
+    }
+    setIsLoading(false);
+  }, [logout]);
 
   const login = async (email: string, password: string) => {
     const { user: loggedInUser, token: authToken } = await apiLogin(email, password);
-    localStorage.setItem('authToken', authToken);
+    sessionStorage.setItem('authToken', authToken);
+    sessionStorage.setItem('authUser', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
     setToken(authToken);
     setIsAuthenticated(true);
     showToast(`Welcome back, ${loggedInUser.name}!`);
   };
-
-  const updateUserProfile = useCallback(async (updatedProfile: Partial<Pick<User, 'name' | 'email'>>) => {
-      if (!user) {
-          throw new Error("User not authenticated");
-      }
-      const updatedUser = await apiUpdateUser(user.id, updatedProfile);
-      setUser(updatedUser);
-  }, [user]);
 
   const contextValue: AppContextType = {
     activePage,
@@ -85,7 +79,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isLoading,
     login,
     logout,
-    updateUserProfile,
   };
 
   return (
