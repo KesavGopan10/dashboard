@@ -3,7 +3,8 @@ import { Product, Category, ProductsApiResponse, User, Order, OrdersApiResponse,
 const BASE_URL = 'http://localhost:5000/api';
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('authToken');
+    // 1️⃣ read from sessionStorage first, fall back to localStorage for backward-compat
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
