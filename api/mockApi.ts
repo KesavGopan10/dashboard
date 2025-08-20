@@ -3,7 +3,7 @@ import { Product, Category, ProductsApiResponse, User, Order, OrdersApiResponse,
 const BASE_URL = 'http://localhost:5000/api';
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken');
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
@@ -175,10 +175,14 @@ export const getOrders = async (params: { page: number, limit: number, search?: 
   return { orders: mappedOrders, totalCount: data.length };
 };
 
-export const updateOrderStatus = async (id: string, status: OrderStatus): Promise<Order> => {
+export const updateOrderStatus = async (id: string, status: OrderStatus, awbId?: string): Promise<Order> => {
+    const payload: { orderStatus: OrderStatus; awbId?: string } = { orderStatus: status };
+    if (awbId) {
+        payload.awbId = awbId;
+    }
     const data = await apiRequest(`/admin/orders/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ orderStatus: status }),
+        body: JSON.stringify(payload),
     });
     return data;
 };

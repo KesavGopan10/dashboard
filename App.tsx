@@ -13,14 +13,14 @@ import WebsiteContentPage from './pages/WebsiteContentPage';
 import { AppContext } from './contexts/AppContext';
 import Toast from './components/Toast';
 import LoadingSpinner from './components/LoadingSpinner';
-import { Page, User } from './types';
+import { Page } from './types';
 
 const App: React.FC = () => {
-  const { activePage, toastMessage, isAuthenticated, user, isLoading } = useContext(AppContext);
+  const { activePage, toastMessage, isAuthenticated, isLoading } = useContext(AppContext);
 
-  const getPageConfig = (currentUser: User | null): Record<Page, { title: string; description: string }> => ({
+  const getPageConfig = (): Record<Page, { title: string; description: string }> => ({
     dashboard: {
-      title: `Hello ${currentUser?.name.split(' ')[0] || 'User'},`,
+      title: 'Hello Admin,',
       description: 'Welcome back and explore the dashboard!',
     },
     products: {
@@ -53,7 +53,7 @@ const App: React.FC = () => {
     },
   });
 
-  const pageConfig = getPageConfig(user);
+  const pageConfig = getPageConfig();
 
   const renderPage = () => {
     switch (activePage) {
