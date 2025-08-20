@@ -7,6 +7,7 @@ import SortableTableHeader from './SortableTableHeader';
 import LoadingSpinner from './LoadingSpinner';
 import { useDebounce } from '../hooks/useDebounce';
 import { ChevronDownIcon } from './icons';
+import ConfirmationModal from './ConfirmationModal';
 
 const ORDERS_PER_PAGE = 8;
 const ALL_STATUSES: OrderStatus[] = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -30,6 +31,11 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig<Order>>({ key: 'date', direction: 'descending' });
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [showAwbModal, setShowAwbModal] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [newStatusForAwb, setNewStatusForAwb] = useState<OrderStatus | null>(null);
+  const [awbId, setAwbId] = useState<string>('');  
+  const [awbIdError, setAwbIdError] = useState<string | null>(null);
 
 
   const { showToast } = useContext(AppContext);
@@ -74,16 +80,58 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   }, [currentPage, debouncedSearchQuery, sortConfig, fetchAndSetOrders]);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    setUpdatingStatus(orderId);
+    if (newStatus === 'shipped') {
+      setCurrentOrderId(orderId);
+      setNewStatusForAwb(newStatus);
+      setShowAwbModal(true);
+    } else {
+      setUpdatingStatus(orderId);
+      try {
+        await updateOrderStatus(orderId, newStatus);
+        showToast(`Order #${orderId.substring(0,6)} status updated.`);
+        setOrders(prev => prev.map(o => o._id === orderId ? {...o, status: newStatus} : o));
+      } catch (err) {
+        showToast('Failed to update order status.');
+        fetchAndSetOrders(currentPage);
+      } finally {
+        setUpdatingStatus(null);
+      }
+    }
+  };
+
+  const handleAwbSubmit = async () => {
+    if (!currentOrderId || !newStatusForAwb) {
+      showToast('Something went wrong. Please try again.');
+      return;
+    }
+    
+    if (!awbId.trim()) {
+      setAwbIdError('AWB ID is required.');
+      return;
+    }
+    
+    // Validate AWB ID format (alphanumeric with possible hyphens)
+    const awbRegex = /^[A-Za-z0-9-]+$/;
+    if (!awbRegex.test(awbId)) {
+      setAwbIdError('AWB ID must contain only letters, numbers, and hyphens.');
+      return;
+    }
+
+    setUpdatingStatus(currentOrderId);
+    setShowAwbModal(false);
     try {
-      await updateOrderStatus(orderId, newStatus);
-      showToast(`Order #${orderId.substring(0,6)} status updated.`);
-      setOrders(prev => prev.map(o => o._id === orderId ? {...o, status: newStatus} : o));
+      await updateOrderStatus(currentOrderId, newStatusForAwb, awbId.trim());
+      showToast(`Order #${currentOrderId.substring(0,6)} status updated and AWB ID added.`);
+      setOrders(prev => prev.map(o => o._id === currentOrderId ? {...o, status: newStatusForAwb} : o));
     } catch (err) {
-      showToast('Failed to update order status.');
+      showToast('Failed to update order status or add AWB ID.');
       fetchAndSetOrders(currentPage);
     } finally {
       setUpdatingStatus(null);
+      setCurrentOrderId(null);
+      setNewStatusForAwb(null);
+      setAwbId('');
+      setAwbIdError(null);
     }
   };
 
@@ -200,6 +248,39 @@ const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
           onPageChange={page => setCurrentPage(page)}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={showAwbModal}
+        onClose={() => {
+          setShowAwbModal(false);
+          setAwbId('');
+          setCurrentOrderId(null);
+          setNewStatusForAwb(null);
+          setAwbIdError(null);
+        }}
+        onConfirm={handleAwbSubmit}
+        title="Enter AWB ID"
+        message="Please enter the Air Waybill (AWB) ID for this shipment."
+        variant="primary"
+      >
+        <div>
+          <input
+            type="text"
+            value={awbId}
+            onChange={(e) => {
+              setAwbId(e.target.value);
+              if (awbIdError) setAwbIdError(null);
+            }}
+            placeholder="Enter AWB ID (e.g., ABC-12345678)"
+            className={`w-full p-3 border ${awbIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'} rounded-lg focus:ring-2 focus:outline-none`}
+            pattern="[A-Za-z0-9-]+"
+            required
+            autoFocus
+            onBlur={(e) => e.target.focus()}
+          />
+          {awbIdError && <p className="text-red-600 text-sm mt-1">{awbIdError}</p>}
+        </div>
+      </ConfirmationModal>
     </div>
   );
 };

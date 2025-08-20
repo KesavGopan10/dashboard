@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { AppContextType, Page, User } from '../types';
+import { AppContextType, Page } from '../types';
 import { login as apiLogin } from '../api/mockApi';
 
 export const AppContext = createContext<AppContextType>(null!);
@@ -10,7 +10,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toastMessage, setToastMessage] = useState('');
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,11 +29,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const logout = useCallback(() => {
-    setUser(null);
     setToken(null);
     setIsAuthenticated(false);
     sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('authUser');
     _setActivePage('dashboard');
     showToast("You have been successfully logged out.");
   }, []);
@@ -42,11 +39,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     try {
       const storedToken = sessionStorage.getItem('authToken');
-      const storedUserRaw = sessionStorage.getItem('authUser');
       // Avoid parsing the literal string "undefined" which would throw a SyntaxError
-      if (storedToken && storedUserRaw && storedUserRaw !== 'undefined') {
+      if (storedToken) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUserRaw));
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -57,13 +52,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [logout]);
 
   const login = async (email: string, password: string) => {
-    const { user: loggedInUser, token: authToken } = await apiLogin(email, password);
+    const { token: authToken } = await apiLogin(email, password);
     sessionStorage.setItem('authToken', authToken);
-    sessionStorage.setItem('authUser', JSON.stringify(loggedInUser));
-    setUser(loggedInUser);
     setToken(authToken);
     setIsAuthenticated(true);
-    showToast(`Welcome back, ${loggedInUser.name}!`);
+    showToast(`Welcome back!`);
   };
 
   const contextValue: AppContextType = {
@@ -74,7 +67,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toastMessage,
     showToast,
     isAuthenticated,
-    user,
     token,
     isLoading,
     login,

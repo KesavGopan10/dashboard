@@ -71,7 +71,6 @@ export type SortConfig<T> = {
 export type Page = 'dashboard' | 'products' | 'categories' | 'orders' | 'reports' | 'offers' | 'websiteContent' | 'settings';
 
 export interface User {
-  name: any;
   token: 'Admin' | 'Editor';
 }
 
@@ -110,7 +109,6 @@ export interface AppContextType {
   toastMessage: string;
   showToast: (message: string) => void;
   isAuthenticated: boolean;
-  user: User | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
