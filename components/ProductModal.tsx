@@ -47,7 +47,7 @@ interface ProductModalProps {
 
 type FormErrors = {
   name?: string;
-  categoryId?: string;
+  category?: string;
   price?: string;
   stock?: string;
   imageUrls?: string;
@@ -57,10 +57,10 @@ type FormErrors = {
 };
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, categories }) => {
-    const newProductInitialState = { name: '', categoryId: '', price: '', stock: '', imageUrls: [] as string[], specifications: [] as { key: string; value: string; }[], description: '', subHeading: '' };
+    const newProductInitialState = { name: '', category: '', price: '', stock: '', imageUrls: [] as string[], specifications: [] as { key: string; value: string; }[], description: '', subHeading: '' };
   
   const getInitialState = () => product 
-    ? { name: product.name, categoryId: String(product.categoryId), price: String(product.price), stock: String(product.stock), imageUrls: product.imageUrls || [], specifications: product.specifications || [], description: product.description || '', subHeading: product.subHeading || '' }
+    ? { name: product.name, category: product.category, price: String(product.price), stock: String(product.stock), imageUrls: product.imageUrls || [], specifications: product.specifications || [], description: product.description || '', subHeading: product.subHeading || '' }
     : newProductInitialState;
 
   const [formData, setFormData] = useState(getInitialState());
@@ -148,7 +148,7 @@ const handleRemoveSpecification = (indexToRemove: number) => {
   const validate = () => {
     const newErrors: FormErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Product name is required.';
-    if (!formData.categoryId) newErrors.categoryId = 'Category is required.';
+    if (!formData.category) newErrors.category = 'Category is required.';
     if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) < 0) newErrors.price = 'Please enter a valid price.';
     if (!formData.stock || isNaN(Number(formData.stock)) || !Number.isInteger(Number(formData.stock)) || Number(formData.stock) < 0) newErrors.stock = 'Please enter a valid stock amount.';
     if (formData.specifications.length === 0) newErrors.specifications = 'At least one specification is required.';
@@ -172,7 +172,7 @@ const handleRemoveSpecification = (indexToRemove: number) => {
     const productToSave = {
       ...(product ? { _id: product._id } : {}),
       name: formData.name,
-      categoryId: formData.categoryId,
+      category: formData.category,
       price: Number(formData.price),
       stock: Number(formData.stock),
       imageUrls: formData.imageUrls,
@@ -304,21 +304,21 @@ const handleRemoveSpecification = (indexToRemove: number) => {
           </div>
 
           <div>
-            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select
-              id="categoryId"
-              name="categoryId"
-              value={formData.categoryId}
+              id="category"
+              name="category"
+              value={formData.category}
               onChange={handleChange}
-              className={`w-full p-3 border rounded-lg focus:ring-2 ${errors.categoryId ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
-              aria-invalid={!!errors.categoryId}
+              className={`w-full p-3 border rounded-lg focus:ring-2 ${errors.category ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
+              aria-invalid={!!errors.category}
             >
               <option value="" disabled>Select a category</option>
               {categories.map(cat => (
                 <option key={cat._id} value={cat._id}>{cat.name}</option>
               ))}
             </select>
-            {errors.categoryId && <p className="text-red-600 text-sm mt-1">{errors.categoryId}</p>}
+            {errors.category && <p className="text-red-600 text-sm mt-1">{errors.category}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
