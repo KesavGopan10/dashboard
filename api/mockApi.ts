@@ -98,6 +98,9 @@ export const getProducts = async (params: { page: number, limit: number, search?
         imageUrls: p.images || [],       // frontend expects `imageUrls`
         isFeatured: p.isFeatured ?? false,
         sold: p.sold ?? 0,
+        specifications: Array.isArray(p.specifications)
+            ? p.specifications.filter((spec: any) => spec && typeof spec.key === 'string' && typeof spec.value === 'string')
+            : [],
     }));
 
     const totalCount = typeof data?.totalCount === 'number' ? data.totalCount : mappedProducts.length;

@@ -46,16 +46,13 @@ export interface Category {
 }
 
 export interface Product {
-  _id: string;
-  name: string;
-  images?: string[]; // maps from 'images'
-  imageUrls?: string[]; // for compatibility with components expecting this
-  categoryId: string;
-  categoryName?: string; // For display purposes, joined in API or mapped on client
+  description: string;
+  subHeading: string;
   price: number;
   stock: number;
-  sold: number; // This field is not in the new schema, but components use it. Assuming it can be derived or will be added. Let's keep it for now and handle its absence.
-  isFeatured: boolean; // Also not in schema.
+  category: string;
+  imageUrl: string;
+  specifications: { key: string; value: string; }[];
 }
 
 export interface ProductsApiResponse {
@@ -99,6 +96,18 @@ export interface WebsiteContent {
   key: string;
   label: string;
   value: string;
+}
+
+export interface PortfolioItem {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  section: 'hero' | 'gallery' | 'featured';
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AppContextType {
