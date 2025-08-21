@@ -46,12 +46,14 @@ export interface Category {
 }
 
 export interface Product {
+  _id: string;
+  name: string;
   description: string;
   subHeading: string;
   price: number;
   stock: number;
   category: string;
-  imageUrl: string;
+  imageUrls: string[];
   specifications: { key: string; value: string; }[];
 }
 

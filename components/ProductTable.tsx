@@ -62,7 +62,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
       
       const productsWithCategoryNames = productsData.products.map(p => ({
         ...p,
-        categoryName: categoryMap.get(p.categoryId) || 'Uncategorized'
+        category: categoryMap.get(p.category) || 'Uncategorized'
       }));
 
       setProducts(productsWithCategoryNames);
@@ -191,7 +191,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
             <tr>
               <th scope="col" className="px-6 py-3">Image</th>
               <SortableTableHeader<Product> label="Product Name" sortKey="name" sortConfig={sortConfig} onSort={handleSort} />
-              <SortableTableHeader<Product> label="Category" sortKey="categoryName" sortConfig={sortConfig} onSort={handleSort} />
+              <SortableTableHeader<Product> label="Category" sortKey="category" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Price" sortKey="price" sortConfig={sortConfig} onSort={handleSort} />
               <SortableTableHeader<Product> label="Stock" sortKey="stock" sortConfig={sortConfig} onSort={handleSort} />
               <th scope="col" className="px-6 py-3 text-right">Actions</th>
