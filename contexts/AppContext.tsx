@@ -5,7 +5,7 @@ import { login as apiLogin } from '../api/mockApi';
 export const AppContext = createContext<AppContextType>(null!);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activePage, _setActivePage] = useState<Page>('dashboard');
+  const [activePage, _setActivePage] = useState<Page>('products');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   
@@ -32,7 +32,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToken(null);
     setIsAuthenticated(false);
     sessionStorage.removeItem('authToken');
-    _setActivePage('dashboard');
+    _setActivePage('products');
     showToast("You have been successfully logged out.");
   }, []);
 
