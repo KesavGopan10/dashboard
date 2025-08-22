@@ -154,8 +154,8 @@ export const getProducts = async (params: {
 export const addProduct = (
   productData: Omit<Product, "_id">
 ): Promise<Product> => {
-  const { imageUrls, ...rest } = productData;
-  const payload = { ...rest, images: imageUrls };
+  const { imageUrls, category, ...rest } = productData;
+  const payload = { ...rest, images: imageUrls, categoryId: category };
   return apiRequest("/admin/products", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -166,8 +166,8 @@ export const updateProduct = (
   id: string,
   productData: Product
 ): Promise<Product> => {
-  const { imageUrls, ...rest } = productData;
-  const payload = { ...rest, images: imageUrls };
+  const { imageUrls, category, ...rest } = productData;
+  const payload = { ...rest, images: imageUrls, categoryId: category };
   return apiRequest(`/admin/products/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),

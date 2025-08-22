@@ -2,7 +2,6 @@ import { PortfolioItem } from "../types";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/portfolio`;
 
-
 // Helper function for API requests
 const apiRequest = async (endpoint: string = "", options: RequestInit = {}) => {
   // Get token from storage
@@ -63,7 +62,7 @@ export const getPortfolioItems = async (
   const query = section ? `?section=${section}` : "";
   const response = await apiRequest(query);
   response.data.forEach((item: PortfolioItem) => {
-    item.imageUrl = `${import.meta.env.VITE_BASE_URL}${item.imageUrl}`;
+    item.imageUrl = item.imageUrl;
   });
   return response;
 };
