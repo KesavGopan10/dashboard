@@ -76,14 +76,34 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, 
     }
   };
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrors(prev => ({ ...prev, imageUrl: 'Only image files are allowed.' }));
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      setErrors(prev => ({ ...prev, imageUrl: 'Image size must be less than 10MB.' }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, imageUrl: reader.result as string }));
+      setErrors(prev => ({ ...prev, imageUrl: undefined })); // Clear error on successful read
+    };
+    reader.readAsDataURL(file);
+  };
+
   const validate = () => {
     const newErrors: FormErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Category name is required.';
     if (!formData.description.trim()) newErrors.description = 'Description is required.';
     if (!formData.imageUrl.trim()) {
-        newErrors.imageUrl = 'Image URL is required.';
-    } else {
-        try { new URL(formData.imageUrl); } catch (_) { newErrors.imageUrl = 'Please enter a valid URL.'; }
+        newErrors.imageUrl = 'Image is required.';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -129,8 +149,50 @@ const CategoryModal: React.FC<CategoryModalProps> = ({ isOpen, onClose, onSave, 
           </div>
 
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <input id="imageUrl" type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://example.com/image.png" className={`w-full p-3 border rounded-lg focus:ring-2 ${errors.imageUrl ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`} aria-invalid={!!errors.imageUrl} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category Image</label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                {formData.imageUrl ? (
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img src={formData.imageUrl} alt="Category Preview" className="h-full w-full object-cover rounded-md" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+                      aria-label="Remove image"
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    stroke="currentColor"
+                    fill="none"
+                    viewBox="0 0 48 48"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L40 32"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="file-upload"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-[#2D7A79] hover:text-[#2D7A79] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#2D7A79]"
+                  >
+                    <span>Upload a file</span>
+                    <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageFileChange} />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            </div>
             {errors.imageUrl && <p className="text-red-600 text-sm mt-1">{errors.imageUrl}</p>}
           </div>
           
