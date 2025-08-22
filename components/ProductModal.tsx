@@ -66,7 +66,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
   const [formData, setFormData] = useState(getInitialState());
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentImageUrl, setCurrentImageUrl] = useState('');
   const [imageUrlError, setImageUrlError] = useState<string | null>(null);
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
@@ -81,8 +80,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
       setFormData(getInitialState());
       setErrors({});
       setIsSubmitting(false);
-      setCurrentImageUrl('');
-      setImageUrlError(null);
     }
   }, [isOpen, product]);
 
@@ -96,26 +93,32 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }
   };
 
-  const handleAddImage = () => {
-    if (!currentImageUrl.trim()) {
-        setImageUrlError('URL cannot be empty.');
-        return;
-    }
-    try {
-        new URL(currentImageUrl);
-    } catch (_) {
-        setImageUrlError('Please enter a valid URL.');
-        return;
-    }
-    if (formData.imageUrls.includes(currentImageUrl)) {
-        setImageUrlError('This image URL has already been added.');
-        return;
-    }
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, currentImageUrl.trim()] }));
-    setCurrentImageUrl('');
-    setImageUrlError(null);
-};
+    setImageUrlError(null); // Clear previous errors
+
+    files.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        setImageUrlError('Only image files are allowed.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (!formData.imageUrls.includes(base64String)) {
+          setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, base64String] }));
+        } else {
+          setImageUrlError('This image has already been added.');
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    // Clear the input value so the same file can be selected again if needed
+    e.target.value = '';
+  };
 
 const handleRemoveImage = (urlToRemove: string) => {
     setFormData(prev => ({
@@ -209,7 +212,7 @@ const handleRemoveSpecification = (indexToRemove: number) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-lg relative">
+      <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800" aria-label="Close modal">
           <XIcon className="w-6 h-6" />
         </button>
@@ -263,42 +266,35 @@ const handleRemoveSpecification = (indexToRemove: number) => {
           </div>
           
           <div>
-            <label htmlFor="imageUrlInput" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <div className="flex items-start gap-2">
-                <div className="flex-grow">
-                    <input
-                        id="imageUrlInput"
-                        type="url"
-                        value={currentImageUrl}
-                        onChange={(e) => { setCurrentImageUrl(e.target.value); setImageUrlError(null); }}
-                        placeholder="https://example.com/image.png"
-                        className={`w-full p-3 border rounded-lg focus:ring-2 ${imageUrlError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-[#2D7A79]'}`}
-                        aria-invalid={!!imageUrlError}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddImage(); }}}
-                    />
-                    {imageUrlError && <p className="text-red-600 text-sm mt-1">{imageUrlError}</p>}
-                </div>
-                <button
-                    type="button"
-                    onClick={handleAddImage}
-                    className="px-5 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 shadow-sm transition-colors flex-shrink-0"
-                >
-                    Add
-                </button>
-            </div>
+            <label htmlFor="imageUpload" className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+            <input
+                id="imageUpload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageFileChange}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#2D7A79] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2D7A79] file:text-white hover:file:bg-opacity-90"
+            />
+            {imageUrlError && <p className="text-red-600 text-sm mt-1">{imageUrlError}</p>}
+
             {formData.imageUrls.length > 0 && (
                 <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Added Images: ({formData.imageUrls.length})</h4>
-                    <ul className="max-h-32 overflow-y-auto space-y-2 rounded-lg border bg-gray-50 p-2">
-                        {formData.imageUrls.map((url, index) => (
-                            <li key={index} className="flex items-center justify-between text-sm bg-white p-2 rounded shadow-sm border">
-                                <span className="truncate text-gray-600 flex-1 mr-2" title={url}>{url}</span>
-                                <button type="button" onClick={() => handleRemoveImage(url)} className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100" aria-label={`Remove ${url}`}>
+                    <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto p-2 border rounded-lg bg-gray-50">
+                        {formData.imageUrls.map((imageUrl, index) => (
+                            <div key={index} className="relative group w-full h-24 bg-gray-200 rounded-md overflow-hidden">
+                                <img src={imageUrl} alt={`Product Image ${index + 1}`} className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(imageUrl)}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove image"
+                                >
                                     <XIcon className="w-4 h-4" />
                                 </button>
-                            </li>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             )}
           </div>
