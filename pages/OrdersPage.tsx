@@ -1,12 +1,10 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import OrderTable from '../components/OrderTable';
-import { AppContext } from '../contexts/AppContext';
 
 const OrdersPage: React.FC = () => {
-    const { searchQuery } = useContext(AppContext);
     return (
         <div>
-            <OrderTable searchQuery={searchQuery} />
+            <OrderTable />
         </div>
     );
 }

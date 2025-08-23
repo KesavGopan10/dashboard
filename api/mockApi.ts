@@ -122,15 +122,56 @@ export const getProducts = async (params: {
   if (params.sortOrder)
     query.set("order", params.sortOrder === "ascending" ? "asc" : "desc");
 
-  const data = await apiRequest(`/admin/products?${query.toString()}`);
+  // First get all products
+  const allProducts = await apiRequest('/admin/products');
+  let filteredProducts = Array.isArray(allProducts) ? allProducts : allProducts.products || [];
 
-  // Accept either `[ {...}, ... ]` or `{ products: [...], totalCount: n }`
-  const rawProducts = Array.isArray(data) ? data : data.products || [];
+  // Apply search filter if search query exists
+  if (params.search) {
+    const searchLower = params.search.toLowerCase();
+    filteredProducts = filteredProducts.filter((p: any) => 
+      p.name.toLowerCase().includes(searchLower) || 
+      (p.category && p.category.toLowerCase().includes(searchLower)) ||
+      (p.description && p.description.toLowerCase().includes(searchLower))
+    );
+  }
 
-  const mappedProducts = rawProducts.map((p: any) => ({
+  // Apply sorting
+  if (params.sortBy) {
+    filteredProducts.sort((a: any, b: any) => {
+      let aValue = a[params.sortBy as keyof Product];
+      let bValue = b[params.sortBy as keyof Product];
+      
+      // Handle undefined/null values
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+      
+      // Convert to string for case-insensitive comparison
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+      
+      if (aValue < bValue) {
+        return params.sortOrder === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return params.sortOrder === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  // Get total count before pagination
+  const totalCount = filteredProducts.length;
+
+  // Apply pagination
+  const startIndex = (params.page - 1) * params.limit;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + params.limit);
+
+  // Map the final products
+  const mappedProducts = paginatedProducts.map((p: any) => ({
     ...p,
     _id: p._id,
-    imageUrls: p.images || [], // frontend expects `imageUrls`
+    imageUrls: p.images || [],
     isFeatured: p.isFeatured ?? false,
     sold: p.sold ?? 0,
     specifications: Array.isArray(p.specifications)
@@ -142,11 +183,6 @@ export const getProducts = async (params: {
         )
       : [],
   }));
-
-  const totalCount =
-    typeof data?.totalCount === "number"
-      ? data.totalCount
-      : mappedProducts.length;
 
   return { products: mappedProducts, totalCount };
 };
