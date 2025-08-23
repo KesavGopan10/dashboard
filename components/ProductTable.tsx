@@ -147,7 +147,16 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
       return <tr><td colSpan={7} className="text-center py-16 text-red-500">{error}</td></tr>;
     }
     if (products.length === 0) {
-      return <tr><td colSpan={7} className="text-center py-16 text-gray-500">No products found.</td></tr>;
+      return (
+        <tr>
+          <td colSpan={7} className="text-center py-16 text-gray-500">
+            {debouncedSearchQuery 
+              ? `No products found matching "${debouncedSearchQuery}"`
+              : 'No products found.'
+            }
+          </td>
+        </tr>
+      );
     }
     return products.map((product) => (
       <tr key={product._id} className="bg-white border-b hover:bg-gray-50">
@@ -161,7 +170,7 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
           )}
         </td>
         <td data-label="Product Name" className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
-        <td data-label="Category" className="px-6 py-4">{product.categoryName}</td>
+        <td data-label="Category" className="px-6 py-4">{product.category}</td>
         <td data-label="Price" className="px-6 py-4">${product.price.toFixed(2)}</td>
         <td data-label="Stock" className="px-6 py-4">{product.stock}</td>
         <td data-label="Actions" className="px-6 py-4 text-right space-x-2">
@@ -179,9 +188,19 @@ const ProductTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Product Sales</h3>
-        <button onClick={handleAddClick} className="px-5 py-2 bg-[#2D7A79] text-white rounded-lg font-semibold hover:bg-opacity-90 shadow-sm transition-all">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h3 className="text-xl font-bold text-gray-800">Product Sales</h3>
+          {debouncedSearchQuery && (
+            <p className="text-sm text-gray-500 mt-1">
+              Showing results for: <span className="font-medium">{debouncedSearchQuery}</span>
+            </p>
+          )}
+        </div>
+        <button 
+          onClick={handleAddClick} 
+          className="px-5 py-2 bg-[#2D7A79] text-white rounded-lg font-semibold hover:bg-opacity-90 shadow-sm transition-all w-full sm:w-auto text-center"
+        >
           Add Product
         </button>
       </div>

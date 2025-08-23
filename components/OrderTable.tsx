@@ -21,7 +21,7 @@ const statusBadgeStyles: Record<string, string> = {
 };
 
 
-const OrderTable: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
+const OrderTable: React.FC<{ searchQuery?: string }> = ({ searchQuery = '' }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
