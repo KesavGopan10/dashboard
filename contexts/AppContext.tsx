@@ -51,8 +51,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoading(false);
   }, [logout]);
 
-  const login = async (email: string, password: string) => {
-    const { token: authToken } = await apiLogin(email, password);
+  const login = async (name: string, password: string) => {
+    const { token: authToken } = await apiLogin(name, password);
     sessionStorage.setItem('authToken', authToken);
     setToken(authToken);
     setIsAuthenticated(true);

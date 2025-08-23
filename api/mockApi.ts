@@ -60,12 +60,12 @@ const mockApiRequest = <T>(data: T, shouldFail = false): Promise<T> => {
 
 // --- AUTH ---
 export const login = async (
-  email: string,
+  name: string,
   password: string
 ): Promise<{ user: User; token: string }> => {
   const data = await apiRequest("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ name, password }),
   });
   return {
     user: data.user,

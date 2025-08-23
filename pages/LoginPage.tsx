@@ -4,8 +4,8 @@ import { DashboardIcon } from '../components/icons';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('password');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      await login(email, password);
+      await login(username, password);
       // On successful login, the App component will automatically redirect
     } catch (err: any) {
       setError(err.message || 'An unknown error occurred.');
@@ -41,15 +41,15 @@ const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-600 mb-1">Username</label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2D7A79] focus:outline-none"
-                placeholder="you@example.com"
+                placeholder="username"
               />
             </div>
             <div>
@@ -76,9 +76,6 @@ const LoginPage: React.FC = () => {
             </div>
           </form>
         </div>
-        <p className="text-center text-xs text-gray-500 mt-6">
-          Hint: Use email `admin@example.com` and password `password`.
-        </p>
       </div>
     </div>
   );
